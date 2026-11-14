@@ -1,0 +1,58 @@
+{
+  "stories": [
+    {
+      "id": "US-001",
+      "feature": "workspace-foundation",
+      "phase": "A",
+      "file": "features/workspace-foundation/US-001-workspace-local-infra-db-baseline.md",
+      "title": "Workspace, local infrastructure, and database baseline",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-002",
+      "feature": "workspace-foundation",
+      "phase": "A",
+      "file": "features/workspace-foundation/US-002-design-system-foundation-shells.md",
+      "title": "Design system foundation and app shells",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-003",
+      "feature": "admin-auth",
+      "phase": "A",
+      "file": "features/admin-auth/US-003-admin-login-session-logout.md",
+      "title": "Admin login, session, and logout",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-004",
+      "feature": "telegram-auth",
+      "phase": "A",
+      "file": "features/telegram-auth/US-004-miniapp-telegram-login.md",
+      "title": "Mini App login with Telegram and role-based landing",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-005",
+      "feature": "telegram-auth",
+      "phase": "A",
+      "file": "features/telegram-auth/US-005-bot-entry-creator-deep-links.md",
+      "title": "Bot entry and creator deep links",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-006",
+      "feature": "telegram-auth",
+      "phase": "A",
+      "file": "features/telegram-auth/US-006-account-status-role-enforcement.md",
+      "title": "Account status and role enforcement on every session",
+      "status": "backlog",
+      "priority": "high"
+    }
+  ]
+}

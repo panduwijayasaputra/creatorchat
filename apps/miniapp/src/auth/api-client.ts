@@ -1,8 +1,11 @@
 import {
+  CreatorLinkResponseSchema,
+  creatorByCodePath,
   ErrorResponseSchema,
   MeResponseSchema,
   TelegramLoginResponseSchema,
   USER_AUTH_PATH,
+  type CreatorLinkResponse,
   type ErrorCode,
   type UserProfile,
 } from '@creatorchat/contracts';
@@ -36,8 +39,12 @@ export interface MiniappApi {
   loginWithTelegram(initData: string): Promise<UserProfile>;
   /** The current account as the server sees it (role and status come from here). */
   me(): Promise<UserProfile>;
+  /** Resolves a creator deep-link code. 404 CREATOR_NOT_FOUND / 403 FORBIDDEN_ROLE arrive as ApiError. */
+  resolveCreator(publicCode: string): Promise<CreatorLinkResponse>;
   /** Called when the session could not be renewed. Returns an unsubscribe function. */
   onSessionLost(listener: (reason: SessionLossReason) => void): () => void;
+  /** Called after a silent re-exchange succeeded, with the account as the server now sees it (the role may have changed). */
+  onSessionRenewed(listener: (user: UserProfile) => void): () => void;
 }
 
 export interface MiniappApiOptions {
@@ -65,6 +72,7 @@ export function lossReasonFor(error: unknown): SessionLossReason {
 export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
   const baseUrl = options.baseUrl.replace(/\/+$/, '');
   const listeners = new Set<(reason: SessionLossReason) => void>();
+  const renewedListeners = new Set<(user: UserProfile) => void>();
   let token: string | null = null;
   let renewing: Promise<boolean> | null = null;
 
@@ -123,7 +131,8 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
         return false;
       }
       try {
-        await exchange(initData);
+        const user = await exchange(initData);
+        renewedListeners.forEach((listener) => listener(user));
         return true;
       } catch (error) {
         if (error instanceof NetworkError) throw error;
@@ -149,6 +158,16 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
     loginWithTelegram: exchange,
     async me() {
       return MeResponseSchema.parse(await (await authorized('GET', '/v1/me')).json());
+    },
+    async resolveCreator(publicCode) {
+      const response = await authorized('GET', creatorByCodePath(publicCode));
+      return CreatorLinkResponseSchema.parse(await response.json());
+    },
+    onSessionRenewed(listener) {
+      renewedListeners.add(listener);
+      return () => {
+        renewedListeners.delete(listener);
+      };
     },
     onSessionLost(listener) {
       listeners.add(listener);

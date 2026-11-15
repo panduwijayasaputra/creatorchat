@@ -5,6 +5,8 @@ export interface UserFixture {
   displayName: string;
   role: Role;
   telegramUsername: string;
+  /** CREATOR fixtures only: the creator's public link code (8 chars of a-z2-7). */
+  publicCode?: string;
 }
 
 /**
@@ -19,18 +21,21 @@ export const USER_FIXTURES: readonly UserFixture[] = [
     displayName: 'Salsa',
     role: Role.CREATOR,
     telegramUsername: 'salsa_sample',
+    publicCode: 'salsa234',
   },
   {
     telegramId: 9_000_000_002n,
     displayName: 'Kirana',
     role: Role.CREATOR,
     telegramUsername: 'kirana_sample',
+    publicCode: 'kirana23',
   },
   {
     telegramId: 9_000_000_003n,
     displayName: 'Dinda',
     role: Role.CREATOR,
     telegramUsername: 'dinda_sample',
+    publicCode: 'dinda234',
   },
   {
     telegramId: 9_000_000_011n,

@@ -1,4 +1,4 @@
-import type { UserProfile } from '@creatorchat/contracts';
+import type { CreatorLinkResponse, UserProfile } from '@creatorchat/contracts';
 import type { SeenFlag } from '../src/auth/AuthProvider';
 import {
   ApiError,
@@ -31,6 +31,11 @@ export interface FakeMiniappApi extends MiniappApi {
   loginResults: (UserProfile | Error)[];
   meResults: (UserProfile | Error)[];
   loseSession(reason: SessionLossReason): void;
+  /** Simulates a silent re-exchange that succeeded and returned this account. */
+  renewSession(user: UserProfile): void;
+  resolveCalls: string[];
+  /** Next outcomes for resolveCreator, consumed in order; default is a creator named Salsa. */
+  resolveResults: (CreatorLinkResponse | Error)[];
 }
 
 /**
@@ -38,14 +43,31 @@ export interface FakeMiniappApi extends MiniappApi {
  * source of the role, so tests can make the login body and `/me` disagree.
  */
 export function createFakeMiniappApi(
-  options: { login?: (UserProfile | Error)[]; me?: (UserProfile | Error)[] } = {},
+  options: {
+    login?: (UserProfile | Error)[];
+    me?: (UserProfile | Error)[];
+    resolve?: (CreatorLinkResponse | Error)[];
+  } = {},
 ): FakeMiniappApi {
   const listeners = new Set<(reason: SessionLossReason) => void>();
+  const renewed = new Set<(user: UserProfile) => void>();
   const api: FakeMiniappApi = {
     loginCalls: [],
     meCalls: 0,
     loginResults: [...(options.login ?? [])],
     meResults: [...(options.me ?? [])],
+    resolveCalls: [],
+    resolveResults: [...(options.resolve ?? [])],
+    async resolveCreator(code) {
+      api.resolveCalls.push(code);
+      const next = api.resolveResults.shift() ?? {
+        public_code: code,
+        display_name: 'Salsa',
+        avatar_url: null,
+      };
+      if (next instanceof Error) throw next;
+      return next;
+    },
     async loginWithTelegram(initData) {
       api.loginCalls.push(initData);
       const next = api.loginResults.shift() ?? nadia;
@@ -63,6 +85,15 @@ export function createFakeMiniappApi(
       return () => {
         listeners.delete(listener);
       };
+    },
+    onSessionRenewed(listener) {
+      renewed.add(listener);
+      return () => {
+        renewed.delete(listener);
+      };
+    },
+    renewSession(user) {
+      renewed.forEach((listener) => listener(user));
     },
     loseSession(reason) {
       listeners.forEach((listener) => listener(reason));

@@ -158,3 +158,10 @@ export const WifiIcon = createIcon(
   'Wifi',
   <path d="M3 9.5a13 13 0 0 1 18 0M6 13a8.5 8.5 0 0 1 12 0M9.2 16.4a4 4 0 0 1 5.6 0M12 20v.01" />,
 );
+export const UserOffIcon = createIcon(
+  'UserOff',
+  <>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4.5 20.5c.6-3.8 3.6-6 7.5-6s6.9 2.2 7.5 6M3 3l18 18" />
+  </>,
+);

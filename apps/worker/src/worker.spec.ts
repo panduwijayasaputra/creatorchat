@@ -52,6 +52,7 @@ describe('worker shell', () => {
     const status = t.lines().find((l) => l.msg === 'integration status');
     expect(status.integrations).toEqual({
       telegram: 'unconfigured',
+      telegramWebhook: 'unconfigured',
       r2: 'unconfigured',
       ai: 'unconfigured',
       aiProvider: 'fake',

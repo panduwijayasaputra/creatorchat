@@ -113,9 +113,16 @@ export function AuthProvider({
       attempt.current += 1;
       setState({ status: 'error', kind: reason });
     });
+    // A silent re-exchange can bring a different role (e.g. approved as creator): follow the server.
+    const unsubscribeRenewed = api.onSessionRenewed((user) => {
+      setState((current) =>
+        current.status === 'authenticated' ? { status: 'authenticated', user } : current,
+      );
+    });
     return () => {
       attempt.current += 1;
       unsubscribe();
+      unsubscribeRenewed();
     };
   }, [api, telegram, seen, connect]);
 

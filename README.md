@@ -112,6 +112,46 @@ The `?tgdev=` support exists only in the development server and is not part of p
 command refuses `NODE_ENV=production` and never prints the bot token. Testing inside the real Telegram
 WebView needs a bot and a public HTTPS URL (see CONFIGURATION.md, "Real Telegram testing").
 
+## Bot entry and creator deep links
+
+The bot is a grammY webhook at `POST /v1/telegram/webhook`. `/start c_<code>` replies with a button that
+opens the Mini App at `MINIAPP_URL/creators/<code>`; `/start` alone (and the menu button) opens the app
+without a destination. The code only picks the page: the API resolves it after login
+(`GET /v1/creators/by-code/<code>`) and grants nothing. Codes are 8 characters from `a-z2-7`; the seed
+creators are `salsa234`, `kirana23` and `dinda234`.
+
+Without `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET` (32+ characters) and
+`MINIAPP_URL` the API still starts; the webhook answers 503 and the startup log shows
+`telegramWebhook: unconfigured`.
+
+Connect a **real** bot (your own token, and your own HTTPS tunnel or domain for `API_PUBLIC_URL` and
+`MINIAPP_URL`; the Mini App host must rewrite unknown paths such as `/creators/<code>` to `index.html`):
+
+```bash
+pnpm telegram:webhook set            # dry run: prints what would change
+pnpm telegram:webhook set --yes      # setWebhook + menu button
+pnpm telegram:webhook info           # what Telegram has registered
+pnpm telegram:webhook delete --yes
+```
+
+Without a real bot you can still try the resolver: log in with `pnpm telegram:initdata`, then open
+`http://localhost:5173/creators/salsa234?tgdev=...` (an unknown code shows "Creator tidak tersedia").
+
+## Roles and blocked accounts
+
+Every user endpoint declares which role may call it (`@Roles(...)`); the API answers 403 `FORBIDDEN_ROLE`
+otherwise, and the Mini App sends a USER away from creator routes and a CREATOR away from customer routes.
+`AccountSecurityService` (backend-core) is the only code that blocks, unblocks or re-roles an account: each
+change bumps `session_version` and revokes that user's sessions, so an old session stops working on its
+next request. No admin screen calls it yet (Phase B/G); the integration tests do
+(`pnpm --filter @creatorchat/api test`).
+
+To see it by hand against your **local dev** database: log in with `?tgdev=`, then in `psql` run
+`UPDATE users SET status = 'BLOCKED' WHERE telegram_id = <id>;` and reload. The old session is rejected
+(the API re-reads the status on every request) and a new login shows the placeholder blocked message.
+Set the status back to `ACTIVE` to undo it. There is no socket gateway yet; its connection check
+(`authorizeConnection`) is tested as a function.
+
 ### Fixture data
 
 The seed adds six fictional accounts from the design samples (creators Salsa, Kirana, Dinda; users Maya Lestari, Raka Putra, Luna Aurora) with fake Telegram IDs in the reserved range `9000000001`–`9000000999`. The seed refuses to run when `NODE_ENV=production`.

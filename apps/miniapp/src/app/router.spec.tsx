@@ -54,7 +54,7 @@ describe('Mini App routes', () => {
   it.each(['/inbox', '/gallery', '/broadcast', '/settings'])(
     'shows the creator shell with the placeholder at %s',
     async (path) => {
-      await renderAt(path);
+      await renderAt(path, { api: createFakeMiniappApi({ me: [maya] }) });
       expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
       expect(screen.queryByRole('navigation', { name: 'Navigasi utama' })).toBeNull();
       expect(screen.getByTestId('not-implemented')).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe('Mini App routes', () => {
   });
 
   it('passes the unread count to the first tab of the active shell', async () => {
-    await renderAt('/inbox', { unreadCount: 3 });
+    await renderAt('/inbox', { unreadCount: 3, api: createFakeMiniappApi({ me: [maya] }) });
     expect(screen.getByLabelText('3 pesan belum dibaca')).toBeInTheDocument();
   });
 

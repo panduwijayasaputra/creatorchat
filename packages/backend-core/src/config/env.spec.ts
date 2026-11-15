@@ -85,6 +85,7 @@ describe('getIntegrationStatus', () => {
     });
     expect(getIntegrationStatus(env)).toEqual({
       telegram: 'unconfigured',
+      telegramWebhook: 'unconfigured',
       r2: 'unconfigured',
       ai: 'unconfigured',
       aiProvider: 'fake',
@@ -100,6 +101,29 @@ describe('getIntegrationStatus', () => {
     const status = getIntegrationStatus(env);
     expect(status.telegram).toBe('configured');
     expect(JSON.stringify(status)).not.toContain('real-looking-token');
+  });
+
+  it('reports the webhook configured only with token, username, a long secret and the Mini App URL', () => {
+    const full = {
+      ...base,
+      TELEGRAM_BOT_TOKEN: '123456:real-looking-token',
+      TELEGRAM_BOT_USERNAME: 'SomeBot',
+      TELEGRAM_WEBHOOK_SECRET: 'w'.repeat(40),
+      MINIAPP_URL: 'https://app.example.test',
+    };
+    expect(getIntegrationStatus(loadEnv(full)).telegramWebhook).toBe('configured');
+    expect(
+      getIntegrationStatus(loadEnv({ ...full, TELEGRAM_WEBHOOK_SECRET: 'short' })).telegramWebhook,
+    ).toBe('unconfigured');
+    expect(
+      getIntegrationStatus(loadEnv({ ...full, TELEGRAM_WEBHOOK_SECRET: undefined }))
+        .telegramWebhook,
+    ).toBe('unconfigured');
+    expect(getIntegrationStatus(loadEnv({ ...full, MINIAPP_URL: undefined })).telegramWebhook).toBe(
+      'unconfigured',
+    );
+    const status = getIntegrationStatus(loadEnv(full));
+    expect(JSON.stringify(status)).not.toContain('wwww');
   });
 
   it('keeps AI unconfigured while the provider is fake even with a key', () => {

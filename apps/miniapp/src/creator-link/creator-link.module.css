@@ -1,0 +1,80 @@
+/* StatesProfile "Creator tidak tersedia" board (values from the board HTML). */
+
+.page {
+  position: relative;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.back {
+  position: relative;
+  z-index: 1;
+  padding: 8px;
+}
+
+.backLink {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 32px 60px;
+}
+
+.disc {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--exp-bg);
+  color: var(--ink-2-pressed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  margin: 20px 0 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+}
+
+.text {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-2);
+}
+
+.action {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.loading {
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 22px;
+}

@@ -41,6 +41,50 @@ function setup(handler: Handler, initData: string | null = 'query_id=x&hash=y') 
 
 const authHeader = (init: RequestInit) => (init.headers as Record<string, string>).authorization;
 
+describe('createMiniappApi.resolveCreator', () => {
+  const creator = { public_code: 'k4m5x2qa', display_name: 'Salsa', avatar_url: null };
+
+  it('sends the Bearer token to the encoded by-code path and parses the three fields', async () => {
+    const { api, calls } = setup((url) =>
+      url.endsWith('/v1/auth/telegram') ? json(200, loginBody('tok-1')) : json(200, creator),
+    );
+    await api.loginWithTelegram('a=1&hash=2');
+    expect((await api.resolveCreator('k4m5x2qa')).display_name).toBe('Salsa');
+    expect(calls[1]?.url).toBe('http://api.test/v1/creators/by-code/k4m5x2qa');
+    expect(authHeader(calls[1]?.init ?? {})).toBe('Bearer tok-1');
+    await api.resolveCreator('../x?y').catch(() => undefined);
+    expect(calls[2]?.url).toBe('http://api.test/v1/creators/by-code/..%2Fx%3Fy');
+  });
+
+  it('surfaces 404 and 403 as ApiError with the server code', async () => {
+    const { api } = setup((url) => {
+      if (url.endsWith('/v1/auth/telegram')) return json(200, loginBody('tok-1'));
+      return url.includes('zzzzzzzz')
+        ? json(404, errorBody('CREATOR_NOT_FOUND'))
+        : json(403, errorBody('FORBIDDEN_ROLE'));
+    });
+    await api.loginWithTelegram('a=1&hash=2');
+    await expect(api.resolveCreator('zzzzzzzz')).rejects.toMatchObject({
+      code: 'CREATOR_NOT_FOUND',
+      status: 404,
+    });
+    await expect(api.resolveCreator('aaaaaaaa')).rejects.toMatchObject({
+      code: 'FORBIDDEN_ROLE',
+      status: 403,
+    });
+  });
+
+  it('rejects a response with extra fields', async () => {
+    const { api } = setup((url) =>
+      url.endsWith('/v1/auth/telegram')
+        ? json(200, loginBody('t'))
+        : json(200, { ...creator, id: 'x' }),
+    );
+    await api.loginWithTelegram('a=1&hash=2');
+    await expect(api.resolveCreator('k4m5x2qa')).rejects.toThrow();
+  });
+});
+
 describe('createMiniappApi', () => {
   it('posts only init_data, parses the response and keeps the token for /me', async () => {
     const { api, calls } = setup((url) =>
@@ -83,6 +127,28 @@ describe('createMiniappApi', () => {
     await api.loginWithTelegram('x');
     expect((await api.me()).id).toBe(profile.id);
     expect(calls.filter((c) => c.url.endsWith('/v1/auth/telegram'))).toHaveLength(2);
+  });
+
+  it('tells listeners the account after a silent re-exchange (the role may have changed)', async () => {
+    let logins = 0;
+    const { api } = setup((url, init) => {
+      if (url.endsWith('/v1/auth/telegram')) {
+        logins += 1;
+        const body = loginBody('tok-' + logins);
+        return json(200, logins === 1 ? body : { ...body, user: { ...profile, role: 'CREATOR' } });
+      }
+      return authHeader(init) === 'Bearer tok-2'
+        ? json(200, profile)
+        : json(401, errorBody('UNAUTHENTICATED'));
+    });
+    const renewed = vi.fn();
+    const unsubscribe = api.onSessionRenewed(renewed);
+    await api.loginWithTelegram('x');
+    expect(renewed).not.toHaveBeenCalled(); // the first login is not a renewal
+    await api.me();
+    expect(renewed).toHaveBeenCalledTimes(1);
+    expect(renewed.mock.calls[0]?.[0]).toMatchObject({ role: 'CREATOR' });
+    unsubscribe();
   });
 
   it('shares one re-exchange between concurrent 401s', async () => {

@@ -104,6 +104,11 @@ Record each decision with date when made. `TBD` items must be resolved (with the
 | Mini App session token | Decided 2026-11-15 (US-004) | HS256 JWT (`jose`, `USER_SESSION_SECRET`) in memory, Bearer header, 60 min, no refresh; re-exchange `initData` on expiry/reopen; every request re-checks the session row, status and `session_version` |
 | Local Telegram login testing | Decided 2026-11-15 (US-004) | Real HMAC validation always; `pnpm telegram:initdata` signs fake initData with the local token and the dev-only `?tgdev=` loads it; no bypass endpoint |
 | Telegram profile photo | Decided 2026-11-15 (US-004) | `photo_url` stored once in `users.avatar_url` at creation (hot-linked); R2 copy deferred to the media phase |
+| Bot deep-link transport (US-005) | Decided 2026-11-15 | Bot `web_app` button opens `MINIAPP_URL/creators/<public_code>`; the path survives login (router sits under `AuthProvider`); the bot accepts only `^c_[A-Za-z0-9_-]{1,62}$`, else opens without a destination |
+| `public_code` format (US-005) | Decided 2026-11-15 | 8 chars lowercase base32 (`a-z2-7`), server-generated, immutable, UNIQUE; readable slug deferred to the creator profile |
+| Webhook handling (US-005) | Decided 2026-11-15 | grammY 1.46.0 (pinned), secret header checked in constant time before parsing, webhook reply (no inline Bot API call), `botInfo` from config (no `getMe`); BullMQ not needed until Phase E |
+| Roles and session invalidation (US-006) | Decided 2026-11-15 | `@Roles()` + `RolesGuard` (fail closed) on every user route; `AccountSecurityService` is the single writer of account status/role and bumps `session_version`, revokes sessions and audits; no Socket.IO yet, so the connection rule is a framework-free `authorizeConnection()` the Phase C gateway must call |
+| Bot copy (US-005) | Placeholder — open input | Undesigned Indonesian placeholder copy in one constants file; user supplies final wording |
 | AI provider/model | TBD — open input | Adapter + fake provider until chosen; admin UI names are samples |
 | Upload size/format/duration limits | TBD — open input | Admin-configurable; don't hide assumptions |
 | Product name, bot username, domains | TBD — open input | Placeholders only (design uses "Creator Chat", `CreatorChatBot` as samples) |
@@ -139,7 +144,9 @@ Checked against the npm registry and each package's `peerDependencies`/`engines`
 | jose | 6.2.17 | Admin access JWT (HS256), in `packages/backend-core` (and as a test-only devDependency of `apps/api`); checked against the npm registry 2026-11-15 |
 | @fastify/cookie | 11.1.5 | Cookie parsing/setting for the API (Fastify 5 compatible), `apps/api` |
 
-Not yet installed: BullMQ, grammY, Socket.IO, Sharp, R2/AWS SDK, TanStack Query (their stories). `backend-core` now also depends on `@creatorchat/db` (Prisma client types) and has `ioredis` as a test-only devDependency.
+| grammy | 1.46.0 | US-005, `apps/api` only (webhook, `webhookCallback(bot, 'fastify')`); checked against the npm registry 2026-11-15 (engines node >=14.13); its types package is @grammyjs/types 5.0.0 |
+
+Not yet installed: BullMQ, Socket.IO, Sharp, R2/AWS SDK, TanStack Query (their stories). `backend-core` now also depends on `@creatorchat/db` (Prisma client types) and has `ioredis` as a test-only devDependency.
 
 ## Testing
 

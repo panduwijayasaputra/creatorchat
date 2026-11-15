@@ -1,8 +1,9 @@
 import { Outlet, type RouteObject } from 'react-router';
 import { AuthProvider, type SeenFlag } from '../auth/AuthProvider';
 import type { MiniappApi } from '../auth/api-client';
-import { LandingRedirect, RequireSession } from '../auth/guards';
+import { LandingRedirect, RequireRole, RequireSession } from '../auth/guards';
 import type { TelegramEnv } from '../telegram/webapp';
+import { CreatorLinkPage } from '../creator-link/CreatorLinkPage';
 import { HealthStatus } from '../components/HealthStatus';
 import { NotImplemented } from '../components/NotImplemented';
 import { CreatorShell, CustomerShell } from '../components/shell/Shells';
@@ -31,8 +32,8 @@ function placeholder(entry: NavEntry, withHealth = false): RouteObject {
 
 /**
  * Everything except the dev-only preview needs a signed-in account (US-004). `/` lands USER on Chat
- * and CREATOR on Inbox from the server's `/me`; the shells themselves are not yet role-gated
- * (US-006), so a wrong-role URL still renders its shell.
+ * and CREATOR on Inbox from the server's `/me`. Each shell is role-gated (US-006): a wrong-role URL
+ * redirects to the account's own landing. This is a UX gate; the API enforces roles on every request.
  */
 export function createMiniappRoutes({
   api,
@@ -53,13 +54,25 @@ export function createMiniappRoutes({
           element: <RequireSession />,
           children: [
             { path: '/', element: <LandingRedirect /> },
+            // Deep-link landing (US-005): the path survives login; the server resolves the code.
+            { path: '/creators/:publicCode', element: <CreatorLinkPage api={api} /> },
             {
-              element: <CustomerShell unreadCount={unreadCount} />,
-              children: CUSTOMER_NAV.map((entry, index) => placeholder(entry, index === 0)),
+              element: <RequireRole role="USER" />,
+              children: [
+                {
+                  element: <CustomerShell unreadCount={unreadCount} />,
+                  children: CUSTOMER_NAV.map((entry, index) => placeholder(entry, index === 0)),
+                },
+              ],
             },
             {
-              element: <CreatorShell unreadCount={unreadCount} />,
-              children: CREATOR_NAV.map((entry) => placeholder(entry)),
+              element: <RequireRole role="CREATOR" />,
+              children: [
+                {
+                  element: <CreatorShell unreadCount={unreadCount} />,
+                  children: CREATOR_NAV.map((entry) => placeholder(entry)),
+                },
+              ],
             },
             {
               path: '*',

@@ -42,7 +42,7 @@
       "phase": "A",
       "file": "features/telegram-auth/US-005-bot-entry-creator-deep-links.md",
       "title": "Bot entry and creator deep links",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -51,7 +51,7 @@
       "phase": "A",
       "file": "features/telegram-auth/US-006-account-status-role-enforcement.md",
       "title": "Account status and role enforcement on every session",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     }
   ]

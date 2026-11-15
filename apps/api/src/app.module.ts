@@ -4,7 +4,9 @@ import { AdminModule } from './admin/admin.module.js';
 import { InfraModule } from './common/infra/infra.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { CreatorsModule } from './modules/creators/creators.module.js';
 import { MeModule } from './modules/me/me.module.js';
+import { TelegramWebhookModule } from './modules/telegram-webhook/telegram-webhook.module.js';
 
 @Module({})
 export class AppModule {
@@ -17,6 +19,8 @@ export class AppModule {
         AdminModule,
         AuthModule,
         MeModule,
+        CreatorsModule,
+        TelegramWebhookModule,
         ...extraModules,
       ],
     };

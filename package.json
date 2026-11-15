@@ -21,7 +21,8 @@
     "visual": "playwright test --config visual/playwright.config.ts",
     "typecheck:visual": "tsc -p visual/tsconfig.json --noEmit",
     "admin:create": "pnpm --filter @creatorchat/db run admin:create",
-    "telegram:initdata": "pnpm --silent --filter @creatorchat/backend-core run telegram:initdata"
+    "telegram:initdata": "pnpm --silent --filter @creatorchat/backend-core run telegram:initdata",
+    "telegram:webhook": "pnpm --silent --filter @creatorchat/backend-core run telegram:webhook"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -1,4 +1,4 @@
-import type { PrismaClient } from '../src/index.js';
+import { Role, type PrismaClient } from '../src/index.js';
 import { generatePassword, hashPassword, normalizeAdminUsername } from './admin.js';
 import { USER_FIXTURES } from './fixtures.js';
 
@@ -15,6 +15,7 @@ export interface SeedResult {
   generatedPassword?: string;
   usersCreated: number;
   usersExisting: number;
+  creatorsCreated: number;
 }
 
 /** Idempotent: re-running never duplicates rows, never changes an existing admin's password. */
@@ -36,18 +37,27 @@ export async function runSeed(
   }
 
   let usersCreated = 0;
+  let creatorsCreated = 0;
   for (const fixture of USER_FIXTURES) {
-    const found = await prisma.user.findUnique({ where: { telegramId: fixture.telegramId } });
-    if (found) continue;
-    await prisma.user.create({
-      data: {
-        telegramId: fixture.telegramId,
-        displayName: fixture.displayName,
-        role: fixture.role,
-        telegramUsername: fixture.telegramUsername,
-      },
-    });
-    usersCreated += 1;
+    let user = await prisma.user.findUnique({ where: { telegramId: fixture.telegramId } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          telegramId: fixture.telegramId,
+          displayName: fixture.displayName,
+          role: fixture.role,
+          telegramUsername: fixture.telegramUsername,
+        },
+      });
+      usersCreated += 1;
+    }
+    if (fixture.publicCode && fixture.role === Role.CREATOR) {
+      const creator = await prisma.creator.findUnique({ where: { userId: user.id } });
+      if (!creator) {
+        await prisma.creator.create({ data: { userId: user.id, publicCode: fixture.publicCode } });
+        creatorsCreated += 1;
+      }
+    }
   }
 
   return {
@@ -56,5 +66,6 @@ export async function runSeed(
     ...(generatedPassword ? { generatedPassword } : {}),
     usersCreated,
     usersExisting: USER_FIXTURES.length - usersCreated,
+    creatorsCreated,
   };
 }

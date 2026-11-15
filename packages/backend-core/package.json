@@ -18,7 +18,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
-    "telegram:initdata": "tsx scripts/telegram-initdata.ts"
+    "telegram:initdata": "tsx scripts/telegram-initdata.ts",
+    "telegram:webhook": "tsx scripts/telegram-webhook.ts"
   },
   "dependencies": {
     "@creatorchat/contracts": "workspace:*",

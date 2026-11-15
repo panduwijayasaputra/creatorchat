@@ -27,6 +27,11 @@ enum AdminStatus {
   DISABLED
 }
 
+enum CreatorStatus {
+  ACTIVE
+  BLOCKED
+}
+
 enum AuditActorType {
   ADMIN
   USER
@@ -52,6 +57,7 @@ model User {
   updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   sessions Session[]
+  creator  Creator?
 
   @@map("users")
 }
@@ -68,6 +74,22 @@ model AdminAccount {
   sessions Session[]
 
   @@map("admin_accounts")
+}
+
+/// Minimal creator record (US-005); the profile fields arrive with Phase B.
+/// The user must have role CREATOR; the approval flow enforces that transactionally.
+model Creator {
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String        @unique @map("user_id") @db.Uuid
+  /// 8 chars of lowercase base32 (CHECK in the migration). Server-generated, immutable.
+  publicCode String        @unique @map("public_code")
+  status     CreatorStatus @default(ACTIVE)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("creators")
 }
 
 /// Belongs to exactly one user OR one admin (CHECK constraint in the migration).

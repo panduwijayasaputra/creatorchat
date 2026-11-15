@@ -51,3 +51,10 @@ describe('HealthResponseSchema', () => {
     ).toBe(false);
   });
 });
+
+describe('creator link error codes', () => {
+  it('includes CREATOR_NOT_FOUND and FORBIDDEN_ROLE', () => {
+    expect(ErrorCode.CREATOR_NOT_FOUND).toBe('CREATOR_NOT_FOUND');
+    expect(ErrorCode.FORBIDDEN_ROLE).toBe('FORBIDDEN_ROLE');
+  });
+});

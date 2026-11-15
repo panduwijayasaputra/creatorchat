@@ -87,8 +87,9 @@ Button (primary/secondary/outline/danger), input/textarea/select, status chip, c
 - AI-assistance disclosure text/location (decision #2) and the "Syarat Layanan" / "Kebijakan Privasi" pages linked from `AuthLogin`.
 - **Admin review of customer access requests** (Minta Akses Uji Coba / Minta Perpanjangan Akses): customer states exist (`CreatorPending`, `StatesAccess`, `Subscriptions`), but there is no admin list/queue or approve/reject dialog for them. Admin can grant via `AdmUserSubs` → `AdmDlgGrant`. Needs a decision: queue screen vs. linking requests into user detail.
 - Customer notification preferences: `Profile` has a "Notifikasi" section (message notifications, show content); **per-creator mute** (brief §9) has no designed control.
-- Invalid deep link "profil tidak tersedia" screen and "CREATOR opened another creator's link" explanation (brief §4) — check `AuthMain`/`StatesProfile` before building; otherwise gap.
+- Invalid deep link: **designed** — `StatesProfile` "Creator tidak tersedia" (checked 2026-11-15, US-005). Still a gap: the "CREATOR opened another creator's link" explanation (brief §4) — neutral placeholder only.
 - Customer media viewer states for revoked/deleted attachments.
+- **Blocked-account message** (US-006): the Mini App shows the "Belum bisa masuk" panel layout with placeholder copy (`BLOCKED_COPY` in `AuthGate.tsx`, `UserOffIcon`). No board exists. Needs final wording, icon and whether a support contact is shown.
 
 ## Miniapp Board Map
 

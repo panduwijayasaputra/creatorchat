@@ -65,6 +65,35 @@
         "TASK-033",
         "TASK-034"
       ]
+    },
+    {
+      "id": "US-005",
+      "title": "Bot entry and creator deep links",
+      "completed": "2026-11-15",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-035",
+        "TASK-036",
+        "TASK-037",
+        "TASK-038",
+        "TASK-039",
+        "TASK-040",
+        "TASK-041",
+        "TASK-042"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Account status and role enforcement on every session",
+      "completed": "2026-11-15",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-043",
+        "TASK-044",
+        "TASK-045",
+        "TASK-046",
+        "TASK-047"
+      ]
     }
   ]
 }

@@ -51,6 +51,7 @@ describe('.env.example as real input', () => {
     const env = loadEnv(values);
     expect(getIntegrationStatus(env)).toEqual({
       telegram: 'unconfigured',
+      telegramWebhook: 'unconfigured',
       r2: 'unconfigured',
       ai: 'unconfigured',
       aiProvider: 'fake',

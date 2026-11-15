@@ -38,7 +38,7 @@ const afterLabel = (text: string) => (page: Page) =>
 const ADMIN_1440 = { width: 1440, height: 900 };
 
 type MiniappSession =
-  'user' | 'creator' | 'login' | 'outside' | 'connecting' | 'network' | 'expired';
+  'user' | 'creator' | 'login' | 'outside' | 'connecting' | 'network' | 'expired' | 'blocked';
 
 /** AuthStates board cards: a label div, then the 390 x 760 card as its next sibling. */
 const authStateCard = (label: string) => (page: Page) =>
@@ -347,6 +347,45 @@ const items: Item[] = [
     reference: { board: 'AuthOutside', png: 'miniapp/AuthOutside.png', locate: authBoard },
   },
   ...authStates,
+  // ---- Blocked account: NO BOARD EXISTS (design gap). Placeholder copy on the 'Belum bisa masuk'
+  // layout; the reference is the AuthStates card 2 so spacing and structure can be eyeballed. The
+  // icon and the text differ on purpose, so this is a capture to look at, not a pixel match. ----
+  {
+    name: 'miniapp-auth-blocked-placeholder',
+    app: 'miniapp',
+    path: '/',
+    viewport: { width: 390, height: 760 },
+    scale: 1,
+    session: 'blocked',
+    actual: (p) => p.locator('main'),
+    reference: {
+      board: 'AuthStates',
+      png: 'miniapp/AuthStates.png',
+      locate: authStateCard('2 · Gagal, dengan retry'),
+    },
+  },
+  // ---- Creator deep link: unavailable (StatesProfile, 4th card) ----
+  {
+    name: 'miniapp-creator-link-tidak-tersedia',
+    app: 'miniapp',
+    path: '/creators/zzzzzzzz',
+    viewport: { width: 390, height: 700 },
+    scale: 1,
+    session: 'user',
+    mock: async (p) => {
+      await p.route('**/v1/creators/by-code/**', (r) =>
+        r.fulfill({ status: 404, json: envelope('CREATOR_NOT_FOUND') }),
+      );
+    },
+    actual: (p) => p.locator('main'),
+    reference: {
+      board: 'StatesProfile',
+      png: 'miniapp/StatesProfile.png',
+      // The heading text also sits inside the card, so take the first match (the label).
+      locate: (p) =>
+        p.locator(`xpath=(//div[text()='Creator tidak tersedia'])[1]/following-sibling::div[1]`),
+    },
+  },
   // ---- Mini App shells at 390 x 844 ----
   {
     name: 'miniapp-shell-customer-nav',
@@ -428,6 +467,9 @@ async function stubMiniappSession(page: Page, session: MiniappSession) {
   await page.route('**/v1/auth/telegram', (route) => {
     if (session === 'connecting') return undefined; // never answers: stays on "Memuat"
     if (session === 'network') return route.abort('connectionrefused');
+    if (session === 'blocked') {
+      return route.fulfill({ status: 403, json: envelope('ACCOUNT_BLOCKED') });
+    }
     if (session === 'expired') {
       return route.fulfill({ status: 401, json: envelope('TELEGRAM_AUTH_EXPIRED') });
     }

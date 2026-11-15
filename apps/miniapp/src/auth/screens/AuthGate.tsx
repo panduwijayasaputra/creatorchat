@@ -5,6 +5,7 @@ import {
   ClockIcon,
   RefreshIcon,
   SendIcon,
+  UserOffIcon,
   WifiIcon,
 } from '@creatorchat/ui';
 import type { ReactNode } from 'react';
@@ -125,6 +126,12 @@ export function ConnectingScreen() {
   );
 }
 
+/** PLACEHOLDER copy (design gap): the one place to replace when the blocked-account message is designed. */
+export const BLOCKED_COPY = {
+  title: 'Belum bisa masuk',
+  text: 'Akun ini sedang tidak aktif, jadi belum bisa dipakai. Hubungi dukungan jika kamu merasa ini keliru.',
+} as const;
+
 const RETRY = (onRetry: () => void) => (
   <Button size="lg" fullWidth icon={<RefreshIcon size={20} strokeWidth={2} />} onClick={onRetry}>
     Coba Lagi
@@ -132,8 +139,8 @@ const RETRY = (onRetry: () => void) => (
 );
 
 /**
- * AuthStates 2 and 3. A blocked account and a server that is down reuse the "Belum bisa masuk"
- * panel with its existing copy: the blocked-account message is not designed yet (US-006 gap).
+ * AuthStates 2 and 3. A server that is down uses the designed "Belum bisa masuk" copy. A blocked
+ * account keeps that panel's layout with placeholder copy (not designed yet: see design-integration.md).
  */
 export function ErrorScreen({ kind, onRetry }: { kind: AuthErrorKind; onRetry: () => void }) {
   if (kind === 'expired') {
@@ -143,6 +150,17 @@ export function ErrorScreen({ kind, onRetry }: { kind: AuthErrorKind; onRetry: (
         icon={<ClockIcon size={40} />}
         title="Sesi Telegram berakhir"
         text="Buka ulang aplikasi dari bot Telegram untuk melanjutkan. Kamu tidak perlu mengisi apa pun."
+        action={RETRY(onRetry)}
+      />
+    );
+  }
+  if (kind === 'blocked') {
+    return (
+      <StatePanel
+        tone="error"
+        icon={<UserOffIcon size={40} />}
+        title={BLOCKED_COPY.title}
+        text={BLOCKED_COPY.text}
         action={RETRY(onRetry)}
       />
     );

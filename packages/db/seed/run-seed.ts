@@ -1,0 +1,60 @@
+import type { PrismaClient } from '../src/index.js';
+import { generatePassword, hashPassword, normalizeAdminUsername } from './admin.js';
+import { USER_FIXTURES } from './fixtures.js';
+
+export interface SeedOptions {
+  adminUsername?: string;
+  /** If omitted and the admin does not exist yet, a random password is generated. */
+  adminPassword?: string;
+}
+
+export interface SeedResult {
+  adminUsername: string;
+  adminCreated: boolean;
+  /** Set only when the password was generated here; the caller must show it exactly once. */
+  generatedPassword?: string;
+  usersCreated: number;
+  usersExisting: number;
+}
+
+/** Idempotent: re-running never duplicates rows, never changes an existing admin's password. */
+export async function runSeed(
+  prisma: PrismaClient,
+  options: SeedOptions = {},
+): Promise<SeedResult> {
+  const adminUsername = normalizeAdminUsername(options.adminUsername || 'admin');
+
+  const existing = await prisma.adminAccount.findUnique({ where: { username: adminUsername } });
+  let adminCreated = false;
+  let generatedPassword: string | undefined;
+  if (!existing) {
+    const password = options.adminPassword || (generatedPassword = generatePassword());
+    await prisma.adminAccount.create({
+      data: { username: adminUsername, passwordHash: await hashPassword(password) },
+    });
+    adminCreated = true;
+  }
+
+  let usersCreated = 0;
+  for (const fixture of USER_FIXTURES) {
+    const found = await prisma.user.findUnique({ where: { telegramId: fixture.telegramId } });
+    if (found) continue;
+    await prisma.user.create({
+      data: {
+        telegramId: fixture.telegramId,
+        displayName: fixture.displayName,
+        role: fixture.role,
+        telegramUsername: fixture.telegramUsername,
+      },
+    });
+    usersCreated += 1;
+  }
+
+  return {
+    adminUsername,
+    adminCreated,
+    ...(generatedPassword ? { generatedPassword } : {}),
+    usersCreated,
+    usersExisting: USER_FIXTURES.length - usersCreated,
+  };
+}

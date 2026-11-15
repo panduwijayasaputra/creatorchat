@@ -24,7 +24,7 @@ In scope from the design: welcome message to new subscribers, creator subscripti
 - **Bot:** grammY (webhook)
 - **Mini App:** React + Vite (Telegram WebApp)
 - **Admin:** React + Vite (separate app)
-- **Local infra:** Docker Compose for PostgreSQL + Redis only
+- **Local infra:** native PostgreSQL + Redis on the dev machine (no Docker); see README
 - **Full details:** `.agile/guidelines/tech-stack.md`, `.agile/guidelines/backend.md`, `.agile/guidelines/frontend.md`
 
 ## Delivery Phases (brief §16)
@@ -69,7 +69,7 @@ pending → in_progress → developed → qa_failed? → tested → done
 - **Do not redesign.** UI follows the design handoff 1:1 (PNG first, exact values from HTML, Indonesian copy verbatim, buttons never wrap, status = icon + label). Verify with a Playwright screenshot at board size. If a needed screen isn't designed, report the gap instead of inventing a final screen.
 - Customers never see AI labels in chat; AI context is persona + recent history of that conversation only.
 - Work local/development only. No deployment, no real credentials, no paid AI calls in tests, no real broadcasts, no writes/deletes on production R2.
-- Never run `prisma migrate reset`, `docker compose down -v`, or other destructive DB/volume commands on a database you didn't create for the task.
+- Never run `prisma migrate reset`, `DROP DATABASE`, or other destructive DB commands on a database you didn't create for the task.
 - Pin dependency versions after checking official docs; commit the lockfile. Don't install `latest` blindly.
 - Report outcomes honestly: do not call mocks "integrations" or a passing build "production-ready".
 

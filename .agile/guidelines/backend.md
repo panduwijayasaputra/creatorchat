@@ -108,6 +108,22 @@ Assume every caller-supplied ID (route, body, query, socket payload) may belong 
 - Secure/HttpOnly cookies, SameSite per topology, CSRF protection, explicit CORS allowlist.
 - Rate-limit login; generic error message on failure. No public registration.
 
+Built in US-003 (follow this shape for every later admin capability):
+- Domain logic is `AdminAuthService` in `packages/backend-core` (`admin-auth/`); `apps/api/src/admin/admin-auth/` only validates, calls it and maps outcomes to `AppError`. The password helpers (`hashPassword`, `verifyPassword`, `verifyDummyPassword`, `normalizeAdminUsername`, `ARGON2_OPTIONS`) live in `packages/db/src/admin-password.ts` (backend-core depends on db, so they cannot live in backend-core without a cycle).
+- Access token: HS256 JWT (`jose`), 15 min, claims `sub` + `sid` + `typ: "admin"`, issuer/audience pinned, algorithm pinned on verify. The guard (`AdminJwtGuard`) reads the access **cookie only** and loads the live session + admin from the DB on every request.
+- Refresh token: 32 random bytes, stored as HMAC-SHA256 with `ADMIN_REFRESH_TOKEN_SECRET`; idle 7 days, absolute cap 30 days. Rotation is one atomic `UPDATE ... RETURNING`; the previous hash is kept (`previous_refresh_token_hash`). Presenting the previous token inside 10 s = racing tab (401, cookies untouched); later = reuse, the session is revoked and audited.
+- CSRF: every non-GET/HEAD `/v1/admin/*` request needs an `Origin` in `ALLOWED_ORIGINS` and, except login, an `X-CSRF-Token` equal to the `cc_admin_csrf` cookie. Use `@UseGuards(CsrfGuard, AdminJwtGuard)` on every admin controller (import `AdminAuthModule`).
+- Lockout/rate limit (Redis, `LoginLimiter`): counters keyed by a SHA-256 fingerprint of the normalized username (unknown usernames behave identically), 5 failures → 15 min lock, separate per-IP failure counter (30). Counters use `SET NX EX` then `INCR`, so a key never lacks a TTL. Redis down → login fails closed (503). Tests use the Redis prefix `test:admin:login` so they never touch dev lockouts.
+- Admin secrets unset/short → admin-auth answers 503 while the rest of the API (health) still boots.
+- Audit actions use dotted names (`admin.login.failed`, ...); rows hold ids, attempt numbers and a 12-char username fingerprint, never passwords, tokens or a raw unknown username.
+
+Built in US-004 (Mini App / Telegram login):
+- Domain logic is `UserAuthService` in `packages/backend-core` (`user-auth/`); `apps/api/src/modules/auth/` only validates the body, calls it and maps outcomes to `AppError`. `validateInitData` follows Telegram's algorithm (HMAC with key "WebAppData", constant-time compare), checks the signature **before** the age (so "expired" is only reported for really signed data), allows 60 s of clock skew, never throws and never echoes input. `buildSignedInitData` exists only for tests and the dev tool.
+- Identity is the validated Telegram `user.id` (BigInt in the DB, string in JSON). First login creates USER/ACTIVE with Telegram name and an https photo (`avatar_url`); later logins never overwrite profile fields (only `telegram_username` follows Telegram). Concurrent first logins: unique constraint + one retry.
+- Session: `Session` row (`user_id`, `session_version`, no refresh token) + HS256 JWT (`jose`, `USER_SESSION_SECRET`, aud `user-api`, `typ:"user"`, claims `sub`, `sid`, `sv`), 60 min, Bearer header. `UserJwtGuard` loads the live session + user on every request and rejects a revoked/expired session, a BLOCKED user and a `session_version` mismatch (bump `users.session_version` on block or role change and every old token dies). One session row per launch; cleanup of expired rows is a later maintenance job.
+- Rate limit (`FixedWindowLimiter`, Redis, fail closed with 503): all attempts per IP and a stricter invalid-initData counter per IP (expired data is not counted). Tests use the Redis prefix `test:user:login`. Secrets unset/short → login answers 503 while the API still boots.
+- Logs and audit never hold initData, hashes, tokens or the bot token (`REDACT_PATHS` + tests).
+
 ## Chat, AI and Concurrency (brief §7)
 
 - **Persist first:** a message is written in a DB transaction before any ack or socket emit. Socket events are emitted only after commit.
@@ -186,7 +202,7 @@ Assume every caller-supplied ID (route, body, query, socket payload) may belong 
 ## Testing
 
 - **Unit:** pure logic in backend-core (entitlement window, state transitions, cost estimation) — `*.spec.ts` next to the file.
-- **Integration (priority):** `*.int.spec.ts` against a real test PostgreSQL database (Compose), covering:
+- **Integration (priority):** `*.int.spec.ts` against a real test PostgreSQL database, covering:
   - forged/expired initData rejected; admin auth independent of Telegram auth
   - IDOR: changed IDs never expose another user's conversation/message/media/admin data
   - approval converts the same account and blocks active/future subscription conflicts; stale session loses role
@@ -202,8 +218,18 @@ Assume every caller-supplied ID (route, body, query, socket payload) may belong 
 
 ### Running
 ```bash
-pnpm --filter api test
-pnpm --filter backend-core test
-pnpm test
+pnpm test                                              # everything (needs PostgreSQL + Redis + DATABASE_URL_TEST)
+pnpm --filter @creatorchat/api exec vitest run --project unit          # no DB/Redis needed
+pnpm --filter @creatorchat/api exec vitest run --project integration   # real test DB + Redis
+pnpm --filter @creatorchat/db exec vitest run --project unit
+pnpm --filter @creatorchat/db exec vitest run --project integration
+pnpm --filter @creatorchat/backend-core test
 ```
-Exact commands are finalized at scaffold — update this section when they exist.
+Conventions (set in US-001):
+- ESM everywhere; relative imports end in `.js`. Packages are consumed through `dist`, so `pnpm build:packages` runs before typecheck/test/dev (the root scripts do this).
+- Unit tests are `*.spec.ts`; integration tests are `*.int.spec.ts` (real test DB, serial, via global setup that calls `prepareTestDatabase()` from `@creatorchat/db/testing`).
+- The API exposes `createApp(env, { logStream, extraModules })` (`apps/api/src/app.factory.ts`); tests use `test/helpers.ts` → `buildTestApp()` with `app.inject()`.
+- Controllers inject with explicit `@Inject(Class)` and Nest decorators compile through `tsc` (build) / SWC (Vitest) so metadata is emitted.
+- Log only error name + stack frames for unexpected errors, never messages; never log bodies, query strings or headers.
+- Prisma 7: schema has no datasource URL; `prisma.config.ts` supplies it; clients are created with `createPrismaClient(url)` (pg driver adapter); generated client lives in `packages/db/src/generated` (git-ignored, run `pnpm db:generate`).
+- Admin password hashing parameters live in `packages/db/seed/admin.ts` (`ARGON2_OPTIONS`); the admin-auth story should extract and reuse them.

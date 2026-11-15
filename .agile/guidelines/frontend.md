@@ -24,7 +24,9 @@ Product rules: `.agile/.doc/Claude_Code_Project_Brief_and_Guide.md` (brief) as a
 ## Styling
 
 - Tokens as CSS custom properties (names in design-integration.md) in one global stylesheet per app (shared via `packages/ui` when both apps use them).
-- Component styles: CSS Modules (proposed — confirm at scaffold and record in tech-stack decisions log). No Tailwind/shadcn/component library — the design doesn't use them.
+- Component styles: **CSS Modules** (decided in US-002). Tokens live once in `packages/ui/src/styles/tokens.css`; Inter is self-hosted via `fonts.css`. No Tailwind/shadcn/component library — the design doesn't use them.
+- **`packages/ui` is source-only** (exports point at `src`, no build): shared components (Button, Field/TextInput/PasswordInput/SearchInput, Select, StatusChip, Card, Tabs, KvList, ToastProvider, ConfirmDialog, DataTable + Pagination) and the icon set. Put a component there only when both apps use it; app-specific ones (BottomNav, admin shell) stay in the app.
+- `packages/ui` components are presentational and prop-driven: no data fetching, no role or session knowledge.
 - Every button `white-space: nowrap`; status chips always icon + label; focus ring `2px solid var(--rose)` offset 2px.
 - Icons: inline SVG components copied from the boards (outline 1.75–2 px), not an icon library unless it matches exactly.
 
@@ -56,7 +58,7 @@ Feature folders hold their screens, hooks and local components. Filenames kebab-
 
 - Function components + hooks; `strict` TypeScript, no `any`.
 - Request/response types and schemas imported from `packages/contracts` — never redefine API types by hand.
-- Server state through one data-fetching layer (proposed: TanStack Query — confirm at scaffold); no ad-hoc fetch in components.
+- Server state through one data-fetching layer (TanStack Query, to be installed by the first story that needs API data); no ad-hoc fetch in components. Routing: React Router (shells exist).
 - Every list/request has loading, empty, error (+ retry) handling.
 - Render user content as text. Never `dangerouslySetInnerHTML` with user/creator content.
 - No secrets in `VITE_*` variables — only public values (API base URL, bot username).
@@ -81,9 +83,14 @@ Feature folders hold their screens, hooks and local components. Filenames kebab-
 - Creator settings include persona, welcome message (`CrWelcome*`), subscription price (`CrPrice`, display/settings only — no payment UI), and display timezone (`CrTimezone`).
 - No AI memory or summary UI anywhere.
 
+Built in US-004 (`apps/miniapp/src/auth/`, `src/telegram/`): `telegram/webapp.ts` is the only code touching `window.Telegram.WebApp` (the official `telegram-web-app.js` is loaded from `index.html`); `createMiniappApi()` keeps the Bearer token only in its closure (`credentials: 'omit'`), renews it once on a 401 by re-exchanging initData (single-flight) and reports a lost session; `AuthProvider` holds `connecting | login-required | outside-telegram | authenticated | error` and takes the role from `/v1/me`; `RequireSession` wraps every route except the dev-only preview, and `LandingRedirect` sends USER to `/chats` and CREATOR to `/inbox`. The only thing our code stores is the cosmetic `cc_tg_seen` flag in `localStorage` (lets returning devices skip the button). Telegram's own script keeps `__telegram__initParams` in `sessionStorage`; that is not ours. Dev only: `?tgdev=<initData>` (from `pnpm telegram:initdata`) fakes the WebApp; its module is imported behind `import.meta.env.DEV` and `pnpm build` confirms it is not in `dist`. Harness: the Mini App screenshots block `telegram.org` (its real script would replace the stubbed WebApp) and stub `/v1/auth/telegram` and `/v1/me`.
+
 ## Admin Dashboard Rules (brief §11)
 
 - Session in Secure/HttpOnly cookies (set by API); send CSRF token as the API requires. Never store tokens in JS-accessible storage.
+- Built in US-003 (`apps/admin/src/auth/`): `createAdminApi()` is the only code that talks to `/v1/admin/auth/*`: relative URLs (same origin; in dev Vite proxies `/v1` to the API), `X-CSRF-Token` taken from the readable `cc_admin_csrf` cookie on unsafe requests, one single-flight refresh + retry on 401 (a second refresh try covers another tab that just rotated), `NetworkError` vs `ApiError`. `AuthProvider` keeps `{loading | authenticated | anonymous}` in memory and asks `/me` on every load. `RequireAdmin` wraps every route except `/login`; later API calls should go through the same client (or reuse its `request` pipeline) so refresh and session-loss handling stay in one place. TanStack Query is still deferred to the first list screen.
+- Vite config gotcha: never call Vite's `loadEnv` on the repo-root `.env` (it carries `NODE_ENV=development` and flips production builds to development, leaking `/__preview` into `dist`; `pnpm build` catches it). `apps/admin/vite.config.ts` reads only `API_PORT` by hand.
+- Harness: the admin screenshots stub the session check (`/v1/admin/auth/me`) because the harness runs without the API.
 - **Tables:** server-side search, filters, column sort, pagination 10/25/50, total + range, "Reset Filter", a **View** on every row that opens a real detail route, and loading/empty/no-results/error/retry states.
   - Table state (filters, sort, page, pageSize) lives in the URL query so it survives navigating to a detail page and back.
   - Changing a filter/search resets to page 1.
@@ -115,6 +122,11 @@ export function ChatListScreen() {
   return <ChatList items={data.items} />;             // export markup, now fed real data
 }
 ```
+
+## Preview and visual QA
+
+- Each app has a development-only `/__preview` page (registered behind `import.meta.env.DEV`; `pnpm build` fails if preview code or fixtures leak into `dist`). Add new shared components there with a `data-preview-section` so `pnpm visual` can capture them.
+- `pnpm visual` (Playwright) writes side-by-side sheets to `visual/output/sheets`; look at every sheet, the diff percentage is informational.
 
 ## Forbidden
 

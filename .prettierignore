@@ -1,0 +1,6 @@
+node_modules
+dist
+designs
+.agile
+pnpm-lock.yaml
+packages/db/prisma/migrations

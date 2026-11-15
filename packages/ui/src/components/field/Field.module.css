@@ -1,0 +1,107 @@
+.field {
+  width: 100%;
+}
+
+.label {
+  display: block;
+  margin: 0 0 6px 2px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 6px 0 0 2px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+.error {
+  margin: 6px 0 0 2px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--err-fg);
+}
+
+.input,
+.control {
+  height: var(--h-input);
+  box-sizing: border-box;
+  border: 1.5px solid var(--field);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 0 14px;
+}
+
+.input[aria-invalid='true'],
+.control:has(input[aria-invalid='true']) {
+  border-color: var(--err-fg);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+}
+
+.control:focus-within,
+.input:focus {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.bare {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  outline: none;
+}
+
+.search {
+  padding: 0 12px;
+  color: var(--ink-2);
+}
+.search .bare {
+  color: var(--ink);
+}
+
+.reveal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rose);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.reveal:focus-visible {
+  outline-offset: 4px;
+}
+
+.searchLarge {
+  height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius-card);
+  font-size: 16px;
+}
+.searchLarge svg {
+  width: 20px;
+  height: 20px;
+}

@@ -16,7 +16,6 @@ coverage/
 !**/.env.example
 
 # local data
-infra/data/
 *.log
 .DS_Store
 Thumbs.db
@@ -25,3 +24,9 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# generated Prisma client
+packages/db/src/generated/
+
+# visual QA output (screenshots, side-by-side sheets)
+visual/output/

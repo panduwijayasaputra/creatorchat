@@ -1,0 +1,112 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-control);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.full {
+  width: 100%;
+}
+
+/* sizes */
+.table {
+  height: var(--h-button-table);
+  padding: 0 12px;
+}
+.md {
+  height: var(--h-button);
+  padding: 0 16px;
+}
+.mobile {
+  height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radius-card);
+  font-size: 15px;
+  line-height: 22px;
+}
+.lg {
+  height: 52px;
+  padding: 0 20px;
+  border-radius: var(--radius-card);
+  font-size: 16px;
+  line-height: 24px;
+  gap: 8px;
+}
+
+/* variants */
+.primary {
+  background: var(--rose);
+  color: #fff;
+}
+.primary:hover {
+  background: var(--rose-hover);
+}
+
+.secondary {
+  background: var(--pink);
+  color: var(--ink);
+}
+.secondary:hover {
+  background: var(--pink-hover);
+}
+
+.outline,
+.danger {
+  background: var(--surface);
+  border-color: var(--field);
+  color: var(--ink);
+}
+.danger {
+  color: var(--err-fg);
+}
+.outline:hover,
+.danger:hover {
+  background: var(--pink-soft);
+}
+
+.destructive {
+  background: var(--err-fg);
+  color: #fff;
+}
+.destructive:hover {
+  background: #8a1f18;
+}
+
+.link {
+  height: var(--touch-min);
+  padding: 0;
+  background: transparent;
+  color: var(--rose);
+  font-size: 15px;
+  text-decoration: underline;
+}
+
+/* disabled: the pink "Nonaktif" look */
+.button:disabled,
+.button[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+.button:disabled:not(.link),
+.button[aria-disabled='true']:not(.link) {
+  background: var(--pink);
+  border-color: transparent;
+  color: var(--ink-2-pressed);
+}
+.link:disabled,
+.link[aria-disabled='true'] {
+  color: var(--ink-2);
+}
+
+.loading {
+  cursor: progress;
+}

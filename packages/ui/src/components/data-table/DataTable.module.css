@@ -1,0 +1,231 @@
+.section {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-dialog);
+  background: var(--bg);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--h-input);
+  margin-left: auto;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--rose);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.reset:hover {
+  background: var(--pink-soft);
+}
+
+.frame {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.scroller {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.th {
+  padding: 12px 16px;
+  background: var(--pink-soft);
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.sortButton svg {
+  color: var(--field);
+}
+.sortActive {
+  color: var(--ink);
+}
+.sortActive svg {
+  color: var(--rose);
+}
+
+.td {
+  min-height: 64px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  vertical-align: middle;
+}
+.row {
+  height: 64px;
+}
+.row:hover > .td {
+  background: var(--pink-soft);
+}
+
+.stickyStart,
+.stickyEnd {
+  position: sticky;
+  z-index: 1;
+  background: var(--surface);
+}
+.th.stickyStart,
+.th.stickyEnd {
+  background: var(--pink-soft);
+}
+.stickyStart {
+  left: 0;
+}
+.stickyEnd {
+  right: 0;
+  box-shadow: -1px 0 0 var(--line);
+}
+.row:hover > .stickyStart,
+.row:hover > .stickyEnd {
+  background: var(--pink-soft);
+}
+
+.skeletonCell {
+  padding: 14px 16px;
+}
+
+.skeleton {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--pink);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 56px 24px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+.stateIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--pink);
+  color: var(--ink-2-pressed);
+}
+.stateIconErr {
+  background: var(--err-bg);
+  color: var(--err-fg);
+}
+.stateTitle {
+  font-size: 17px;
+  font-weight: 700;
+}
+.stateMessage {
+  max-width: 420px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+.stateAction {
+  margin-top: 8px;
+}
+
+/* footer / pagination */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 18px;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.sizeGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pageButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pageButton:disabled {
+  color: var(--field);
+  cursor: not-allowed;
+}
+.currentPage {
+  border-color: var(--rose);
+  background: var(--rose);
+  color: #fff;
+}
+.gap {
+  min-width: 20px;
+  text-align: center;
+  color: var(--ink-2);
+}
+
+@media (max-width: 720px) {
+  .footer {
+    flex-wrap: wrap;
+  }
+}

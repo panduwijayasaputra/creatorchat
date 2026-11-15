@@ -6,22 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current State
 
-No application code exists yet — the repo holds the product brief, the agile pipeline, guidelines, and the Claude Design handoff. The next work is **Phase A (Foundation)**. Commands below are the agreed **targets** to implement during scaffold; check `package.json` before assuming one exists, and update this file once they do.
+Phase A is under way. **US-001** (workspace, database baseline, health), **US-002** (design system + app shells) and **US-003** (admin login, session, logout) and **US-004** (Mini App login with Telegram) are built; role enforcement per endpoint and the blocked-account message are US-006. The commands below exist (see `package.json`); `pnpm visual` is the Playwright screenshot comparison against the design PNGs (needs `pnpm exec playwright install chromium` once); `pnpm telegram:initdata` prints signed fake Telegram initData for trying the Mini App login locally (needs `TELEGRAM_BOT_TOKEN` and `USER_SESSION_SECRET` in `.env`); `pnpm admin:create` creates an admin or resets its password (needs `ADMIN_ACCESS_TOKEN_SECRET` / `ADMIN_REFRESH_TOKEN_SECRET` in `.env` before anyone can log in).
 
 ## Commands (targets — implemented in Phase A)
 
 ```bash
 pnpm install
-docker compose -f infra/docker-compose.yml up -d postgres redis   # only Postgres + Redis run in Docker
+# PostgreSQL + Redis run natively (no Docker): README.md; create DBs with scripts/setup-postgres.sql
 pnpm db:migrate          # prisma migrate dev — local dev DB only
 pnpm db:seed             # fixtures from design seed data; admin password supplied/generated, shown once
 pnpm dev                 # api + worker + miniapp + admin
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 pnpm --filter <api|worker|miniapp|admin|backend-core|contracts|db> test   # one package
-docker compose -f infra/docker-compose.yml stop                    # never `down -v` (deletes DB volume)
 ```
 
-Single-test syntax depends on the test runner chosen at scaffold (proposed Vitest: `pnpm --filter api test -- <file> -t "<name>"`). Integration tests (`*.int.spec.ts`) need the Compose Postgres and use `DATABASE_URL_TEST`, never the dev DB. Env variables and the server/client split: `CONFIGURATION.md`.
+Single-test syntax depends on the test runner chosen at scaffold (proposed Vitest: `pnpm --filter api test -- <file> -t "<name>"`). Integration tests (`*.int.spec.ts`) need the local PostgreSQL + Redis and use `DATABASE_URL_TEST`, never the dev DB. Env variables and the server/client split: `CONFIGURATION.md`.
 
 ## Architecture (big picture)
 

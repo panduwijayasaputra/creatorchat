@@ -1,0 +1,37 @@
+{
+  "name": "creatorchat",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build:packages": "pnpm --filter \"./packages/*\" run build",
+    "build": "pnpm build:packages && pnpm --filter \"./apps/*\" run build && node scripts/check-no-preview.mjs",
+    "typecheck": "pnpm build:packages && pnpm -r --workspace-concurrency=1 run typecheck && pnpm typecheck:visual",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "pnpm build:packages && pnpm -r --workspace-concurrency=1 run test",
+    "db:generate": "pnpm --filter @creatorchat/db run generate",
+    "db:migrate": "pnpm --filter @creatorchat/db run migrate:dev",
+    "db:seed": "pnpm --filter @creatorchat/db run seed",
+    "dev": "pnpm build:packages && pnpm --parallel --filter \"./apps/*\" run dev",
+    "visual": "playwright test --config visual/playwright.config.ts",
+    "typecheck:visual": "tsc -p visual/tsconfig.json --noEmit",
+    "admin:create": "pnpm --filter @creatorchat/db run admin:create",
+    "telegram:initdata": "pnpm --silent --filter @creatorchat/backend-core run telegram:initdata"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vitest": "5.1.0"
+  }
+}

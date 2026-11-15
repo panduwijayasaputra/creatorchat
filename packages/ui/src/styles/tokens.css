@@ -1,0 +1,44 @@
+/* Design tokens — values from .agile/guidelines/design-integration.md (Claude Design handoff). */
+:root {
+  --bg: #fff9fb;
+  --pink: #f5dce5;
+  --pink-soft: #fbedf2;
+  --pink-hover: #ebc9d6;
+  --rose: #a83f67;
+  --rose-hover: #8e3255;
+  --ink: #30252c;
+  --ink-2: #75636d;
+  --ink-2-pressed: #66545e;
+  --line: #e6d3db;
+  --field: #d8c0ca;
+  --surface: #ffffff;
+
+  --ok-fg: #24634a;
+  --ok-bg: #e1f0e7;
+  --warn-fg: #7a4f0d;
+  --warn-bg: #fbedd0;
+  --err-fg: #a3261d;
+  --err-bg: #fbe3e0;
+  --exp-fg: #5e4e57;
+  --exp-bg: #efe7eb;
+
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-dialog: 20px;
+  --radius-chip: 14px;
+
+  --shadow-1: 0 1px 2px rgba(48, 37, 44, 0.06);
+  --shadow-2: 0 4px 16px rgba(48, 37, 44, 0.08);
+  --backdrop: rgba(48, 37, 44, 0.5);
+
+  --h-button: 40px;
+  --h-button-table: 36px;
+  --h-input: 44px;
+  --touch-min: 44px;
+
+  --font-sans: Inter, -apple-system, 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-mono: ui-monospace, Menlo, monospace;
+
+  /* Telegram safe area (US-004 will feed --tg-safe-area-inset-bottom from the WebApp SDK). */
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px));
+}

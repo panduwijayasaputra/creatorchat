@@ -1,3 +1,70 @@
 {
-  "stories": []
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Workspace, local infrastructure, and database baseline",
+      "completed": "2026-11-15",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-001",
+        "TASK-002",
+        "TASK-003",
+        "TASK-004",
+        "TASK-005",
+        "TASK-006",
+        "TASK-007",
+        "TASK-008",
+        "TASK-009",
+        "TASK-010",
+        "TASK-011"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Design system foundation and app shells",
+      "completed": "2026-11-15",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-012",
+        "TASK-013",
+        "TASK-014",
+        "TASK-015",
+        "TASK-016",
+        "TASK-017",
+        "TASK-018",
+        "TASK-019"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Admin login, session, and logout",
+      "completed": "2026-11-15",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-020",
+        "TASK-021",
+        "TASK-022",
+        "TASK-023",
+        "TASK-024",
+        "TASK-025",
+        "TASK-026"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Mini App login with Telegram and role-based landing",
+      "completed": "2026-11-15",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-027",
+        "TASK-028",
+        "TASK-029",
+        "TASK-030",
+        "TASK-031",
+        "TASK-032",
+        "TASK-033",
+        "TASK-034"
+      ]
+    }
+  ]
 }

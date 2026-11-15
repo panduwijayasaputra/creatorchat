@@ -1,0 +1,121 @@
+.page {
+  box-sizing: border-box;
+  max-width: 1440px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 48px;
+  background: #f1e8ec;
+}
+
+.heading {
+  margin: 0;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+.lead {
+  margin: 8px 0 0;
+  font-size: 16px;
+  color: var(--ink-2-pressed);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.label {
+  margin: 0 0 8px 4px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--ink-2-pressed);
+}
+
+.sectionBody {
+  margin-top: 16px;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.swatchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.swatch {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.swatchName {
+  font-size: 14px;
+  font-weight: 700;
+}
+.swatchNote {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.muted {
+  margin: 16px 0 0;
+  line-height: normal;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.searchWidth {
+  width: 300px;
+  flex: none;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 16px;
+  }
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}

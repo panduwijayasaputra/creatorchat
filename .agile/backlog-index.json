@@ -6,7 +6,7 @@
       "phase": "A",
       "file": "features/workspace-foundation/US-001-workspace-local-infra-db-baseline.md",
       "title": "Workspace, local infrastructure, and database baseline",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -15,7 +15,7 @@
       "phase": "A",
       "file": "features/workspace-foundation/US-002-design-system-foundation-shells.md",
       "title": "Design system foundation and app shells",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -24,7 +24,7 @@
       "phase": "A",
       "file": "features/admin-auth/US-003-admin-login-session-logout.md",
       "title": "Admin login, session, and logout",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -33,7 +33,7 @@
       "phase": "A",
       "file": "features/telegram-auth/US-004-miniapp-telegram-login.md",
       "title": "Mini App login with Telegram and role-based landing",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {

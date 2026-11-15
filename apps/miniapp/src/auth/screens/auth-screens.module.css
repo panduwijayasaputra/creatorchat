@@ -1,0 +1,219 @@
+/* AuthLogin / AuthOutside / AuthStates (Claude Design boards), values from the board HTML. */
+
+.page {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.hero {
+  height: 330px;
+  box-sizing: border-box;
+  border-radius: 0 0 36px 36px;
+  background: var(--pink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 22px;
+  padding-bottom: 36px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--rose);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brandName {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.avatars {
+  display: flex;
+}
+
+.avatarRing {
+  display: block;
+  line-height: 0;
+  border: 3px solid var(--pink);
+  border-radius: 50%;
+}
+
+.avatarRing:not(:first-child) {
+  margin-left: -18px;
+}
+
+.avatar {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(48, 37, 44, 0.08);
+}
+
+.body {
+  padding: 32px 24px 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.lead {
+  margin: 12px 0 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--ink-2);
+}
+
+.action {
+  margin-top: 28px;
+}
+
+/* The outside link is an anchor styled as the same 52 px primary button. */
+.linkButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border-radius: var(--radius-card);
+  background: var(--rose);
+  color: #fff;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.linkButton:hover {
+  background: #8e3255;
+}
+
+.linkButton[aria-disabled='true'] {
+  background: var(--pink);
+  color: var(--ink-2-pressed);
+  pointer-events: none;
+}
+
+.helper {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.terms {
+  margin-top: 20px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* Not designed yet (gap): the links look like the board's but do not navigate anywhere. */
+.termsLink {
+  color: var(--rose);
+  font-weight: 600;
+  text-decoration: underline;
+  padding: 12px 0;
+}
+
+/* AuthStates: centered column, icon disc, title, text, optional action. */
+.state {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 32px 80px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.disc {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discBrand {
+  background: var(--pink);
+  color: var(--rose);
+}
+
+.discError {
+  background: var(--err-bg);
+  color: var(--err-fg);
+}
+
+.discExpired {
+  background: var(--exp-bg);
+  color: var(--exp-fg);
+}
+
+.stateTitle {
+  margin: 20px 0 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+}
+
+.stateText {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-2);
+}
+
+.stateAction {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.spinner {
+  margin-top: 24px;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

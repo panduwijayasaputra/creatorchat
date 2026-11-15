@@ -1,6 +1,6 @@
 # US-004: Mini App login with Telegram and role-based landing
 
-**Status:** backlog
+**Status:** ready_for_uat
 **Priority:** high
 **Feature:** telegram-auth
 **Phase:** A
@@ -14,9 +14,35 @@ As a Telegram user, I want to enter the Mini App with my Telegram identity witho
 
 ## Acceptance Criteria
 
-- [ ] Inside Telegram, `AuthLogin` shows "Lanjutkan dengan Telegram". Continuing sends `initData` to the API, which validates the signature with the bot token and checks `auth_date` against the configured max age. While waiting, "Menghubungkan ke Telegram…" is shown. The demo strip on `AuthLogin` ("DEMO · bukan fitur produk") is not built.
-- [ ] On first login a `User` is created by `telegram_id` with role **USER** and status ACTIVE; Telegram name and photo become the initial app profile. Later logins don't overwrite profile edits and identify the user by `telegram_id`, never by username. The API returns `telegram_id` as a string.
-- [ ] After login, USER lands on **Chat** and CREATOR lands on **Inbox** (in the shells from US-002). Role comes only from the server (`/v1/me`), never from `initDataUnsafe` or the client. The session token is kept in memory (not `localStorage`) and is re-issued from `initData` when the Mini App is reopened.
-- [ ] Forged, tampered, or expired `initData` is rejected (401, no user created or changed). Expired auth shows "Sesi Telegram berakhir" with "Coba Lagi"; a network failure shows "Belum bisa masuk" with "Coba Lagi". Neither raw `initData` nor the bot token appears in logs.
-- [ ] Opened outside Telegram (no `initData`), the app shows `AuthOutside` with "Buka di Telegram" linking to the bot (username from config). There is no other web login.
-- [ ] A user whose account is BLOCKED gets no session (see US-006 for the message). Telegram login is rate-limited.
+- [x] Inside Telegram, `AuthLogin` shows "Lanjutkan dengan Telegram". Continuing sends `initData` to the API, which validates the signature with the bot token and checks `auth_date` against the configured max age. While waiting, "Menghubungkan ke Telegram…" is shown. The demo strip on `AuthLogin` ("DEMO · bukan fitur produk") is not built.
+- [x] On first login a `User` is created by `telegram_id` with role **USER** and status ACTIVE; Telegram name and photo become the initial app profile. Later logins don't overwrite profile edits and identify the user by `telegram_id`, never by username. The API returns `telegram_id` as a string.
+- [x] After login, USER lands on **Chat** and CREATOR lands on **Inbox** (in the shells from US-002). Role comes only from the server (`/v1/me`), never from `initDataUnsafe` or the client. The session token is kept in memory (not `localStorage`) and is re-issued from `initData` when the Mini App is reopened.
+- [x] Forged, tampered, or expired `initData` is rejected (401, no user created or changed). Expired auth shows "Sesi Telegram berakhir" with "Coba Lagi"; a network failure shows "Belum bisa masuk" with "Coba Lagi". Neither raw `initData` nor the bot token appears in logs.
+- [x] Opened outside Telegram (no `initData`), the app shows `AuthOutside` with "Buka di Telegram" linking to the bot (username from config). There is no other web login.
+- [x] A user whose account is BLOCKED gets no session (see US-006 for the message). Telegram login is rate-limited.
+
+## Tasks
+
+### TASK-027: Contracts — Telegram login, `/me`, error codes
+**Status:** done
+
+### TASK-028: Database — user sessions without a refresh token
+**Status:** done
+
+### TASK-029: backend-core — initData validation, rate limiter, `UserAuthService`
+**Status:** done
+
+### TASK-030: API — `POST /v1/auth/telegram`, `GET /v1/me`, `UserJwtGuard`
+**Status:** done
+
+### TASK-031: Mini App — Telegram wrapper, auth client, `AuthProvider`, route guard, role landing
+**Status:** done
+
+### TASK-032: Mini App login screens — `AuthLogin`, `AuthOutside`, `AuthStates`, and visual check
+**Status:** done
+
+### TASK-033: Dev tooling — `pnpm telegram:initdata`
+**Status:** done
+
+### TASK-034: End-to-end verification, docs, and map
+**Status:** done

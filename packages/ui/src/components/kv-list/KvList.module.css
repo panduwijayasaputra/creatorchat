@@ -1,0 +1,29 @@
+.list {
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.label {
+  color: var(--ink-2);
+}
+
+.value {
+  margin: 0;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

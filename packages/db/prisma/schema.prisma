@@ -1,0 +1,117 @@
+// Identity baseline (US-001). Tables for later phases are added by later migrations.
+// Rules: UUID primary keys, timestamptz everywhere (UTC), explicit enums.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  CREATOR
+}
+
+enum AccountStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum AdminStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum AuditActorType {
+  ADMIN
+  USER
+  SYSTEM
+}
+
+model User {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Telegram numeric ID. BigInt in the DB, string in JSON. Never use username as identity.
+  telegramId       BigInt        @unique @map("telegram_id")
+  role             Role          @default(USER)
+  status           AccountStatus @default(ACTIVE)
+  displayName      String        @map("display_name")
+  /// Mutable, informational only.
+  telegramUsername String?       @map("telegram_username")
+  avatarUrl        String?       @map("avatar_url")
+  bio              String?
+  /// IANA timezone used for display only.
+  timezone         String        @default("Asia/Jakarta")
+  /// Bumped on block / role change so stale sessions lose privileges.
+  sessionVersion   Int           @default(1) @map("session_version")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions Session[]
+
+  @@map("users")
+}
+
+model AdminAccount {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Stored lowercase (enforced by a CHECK constraint in the migration).
+  username     String      @unique
+  passwordHash String      @map("password_hash")
+  status       AdminStatus @default(ACTIVE)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions Session[]
+
+  @@map("admin_accounts")
+}
+
+/// Belongs to exactly one user OR one admin (CHECK constraint in the migration).
+model Session {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String?   @map("user_id") @db.Uuid
+  adminId                  String?   @map("admin_id") @db.Uuid
+  /// Keyed hash (HMAC-SHA256 hex) of the opaque refresh token. The token itself is never stored.
+  refreshTokenHash         String?   @unique @map("refresh_token_hash")
+  /// Hash of the token replaced by the last rotation; presenting it again signals token reuse.
+  previousRefreshTokenHash String?   @unique @map("previous_refresh_token_hash")
+  rotatedAt                DateTime? @map("rotated_at") @db.Timestamptz(3)
+  /// The user's session_version when this session was issued (user sessions only).
+  sessionVersion           Int?      @map("session_version")
+  expiresAt                DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt                DateTime? @map("revoked_at") @db.Timestamptz(3)
+  lastUsedAt               DateTime? @map("last_used_at") @db.Timestamptz(3)
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user  User?         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  admin AdminAccount? @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Append-only (trigger in the migration rejects UPDATE and DELETE).
+model AuditLog {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorType  AuditActorType @map("actor_type")
+  /// Polymorphic (user/admin/system), so intentionally not a foreign key.
+  actorId    String?        @map("actor_id") @db.Uuid
+  action     String
+  targetType String?        @map("target_type")
+  targetId   String?        @map("target_id")
+  reason     String?
+  /// Sanitized before/after; never secrets or message content.
+  changes    Json?
+  requestId  String?        @map("request_id")
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}

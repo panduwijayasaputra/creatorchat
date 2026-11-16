@@ -42,8 +42,8 @@ describe('creatorPath', () => {
 });
 
 describe('CreatorLinkResponseSchema', () => {
-  const ok = { public_code: 'k4m5x2qa', display_name: 'Salsa', avatar_url: null };
-  it('accepts exactly the three fields', () => {
+  const ok = { public_code: 'k4m5x2qa', display_name: 'Salsa', bio: null, avatar_url: null };
+  it('accepts exactly the four fields', () => {
     expect(CreatorLinkResponseSchema.safeParse(ok).success).toBe(true);
   });
   it('rejects extra keys such as id, role or status', () => {

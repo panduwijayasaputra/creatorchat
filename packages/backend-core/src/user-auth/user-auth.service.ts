@@ -1,4 +1,9 @@
-import { USER_SESSION_TTL_SECONDS, type UserProfile, type UserRole } from '@creatorchat/contracts';
+import {
+  DISPLAY_NAME_MAX,
+  USER_SESSION_TTL_SECONDS,
+  type UserProfile,
+  type UserRole,
+} from '@creatorchat/contracts';
 import type { PrismaClient } from '@creatorchat/db';
 import type { FixedWindowLimiter } from './rate-limiter.js';
 import { validateInitData, type TelegramUser } from './telegram-init-data.js';
@@ -49,6 +54,9 @@ interface UserRow {
   displayName: string;
   telegramUsername: string | null;
   avatarUrl: string | null;
+  telegramAvatarUrl: string | null;
+  bio: string | null;
+  timezone: string;
 }
 
 export class UserAuthConfigError extends Error {
@@ -80,15 +88,22 @@ export function toUserProfile(user: UserRow): UserProfile {
     display_name: user.displayName,
     telegram_username: user.telegramUsername,
     avatar_url: user.avatarUrl,
+    bio: user.bio,
+    telegram_avatar_url: user.telegramAvatarUrl,
+    timezone: user.timezone,
   };
 }
 
+/** The edit form allows 40 characters, so the initial name is cut to the same limit (by code point). */
 function displayNameOf(user: TelegramUser): string {
-  return [user.firstName, user.lastName]
-    .filter((part): part is string => Boolean(part))
-    .join(' ')
-    .trim()
-    .slice(0, 100);
+  return Array.from(
+    [user.firstName, user.lastName]
+      .filter((part): part is string => Boolean(part))
+      .join(' ')
+      .trim(),
+  )
+    .slice(0, DISPLAY_NAME_MAX)
+    .join('');
 }
 
 /** Only an https URL is kept as the initial avatar; anything else is dropped. */
@@ -217,12 +232,16 @@ export class UserAuthService {
       where: { telegramId: telegram.telegramId },
     });
     if (existing) {
-      // Only the informational Telegram username follows Telegram; the app profile is never overwritten.
+      // Only the informational Telegram username and photo follow Telegram; the app profile
+      // (name, bio, app photo) is never overwritten.
       const username = telegram.username ?? null;
-      if (existing.telegramUsername === username) return existing;
+      const photo = avatarOf(telegram.photoUrl);
+      if (existing.telegramUsername === username && existing.telegramAvatarUrl === photo) {
+        return existing;
+      }
       return this.prisma.user.update({
         where: { id: existing.id },
-        data: { telegramUsername: username },
+        data: { telegramUsername: username, telegramAvatarUrl: photo },
       });
     }
     try {
@@ -233,6 +252,7 @@ export class UserAuthService {
             displayName: displayNameOf(telegram),
             telegramUsername: telegram.username ?? null,
             avatarUrl: avatarOf(telegram.photoUrl),
+            telegramAvatarUrl: avatarOf(telegram.photoUrl),
           },
         });
         await tx.auditLog.create({

@@ -53,6 +53,123 @@
       "title": "Account status and role enforcement on every session",
       "status": "ready_for_uat",
       "priority": "high"
+    },
+    {
+      "id": "US-007",
+      "feature": "profiles",
+      "phase": "B",
+      "file": "features/profiles/US-007-user-profile-edit.md",
+      "title": "USER profile page and edit profile",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-008",
+      "feature": "profiles",
+      "phase": "B",
+      "file": "features/profiles/US-008-creator-settings-profile-bio-link.md",
+      "title": "Creator settings, edit profile and bio link",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-009",
+      "feature": "profiles",
+      "phase": "B",
+      "file": "features/profiles/US-009-creator-display-timezone.md",
+      "title": "Creator display timezone",
+      "status": "ready_for_uat",
+      "priority": "low"
+    },
+    {
+      "id": "US-010",
+      "feature": "creator-applications",
+      "phase": "B",
+      "file": "features/creator-applications/US-010-submit-creator-request.md",
+      "title": "Submit a creator request",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-011",
+      "feature": "creator-applications",
+      "phase": "B",
+      "file": "features/creator-applications/US-011-request-status-resubmit.md",
+      "title": "Creator request status and resubmission",
+      "status": "planned",
+      "priority": "high"
+    },
+    {
+      "id": "US-012",
+      "feature": "creator-applications",
+      "phase": "B",
+      "file": "features/creator-applications/US-012-admin-approve-reject-request.md",
+      "title": "Admin approves or rejects a creator request",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-013",
+      "feature": "creator-applications",
+      "phase": "B",
+      "file": "features/creator-applications/US-013-bot-request-result.md",
+      "title": "Bot sends the creator request result",
+      "status": "backlog",
+      "priority": "medium"
+    },
+    {
+      "id": "US-014",
+      "feature": "admin-accounts",
+      "phase": "B",
+      "file": "features/admin-accounts/US-014-admin-creator-list.md",
+      "title": "Admin creator list",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-015",
+      "feature": "admin-accounts",
+      "phase": "B",
+      "file": "features/admin-accounts/US-015-admin-creator-detail.md",
+      "title": "Admin creator detail (ringkasan and history)",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-016",
+      "feature": "admin-accounts",
+      "phase": "B",
+      "file": "features/admin-accounts/US-016-admin-block-unblock-creator.md",
+      "title": "Admin blocks and unblocks a creator",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-017",
+      "feature": "admin-accounts",
+      "phase": "B",
+      "file": "features/admin-accounts/US-017-admin-user-list.md",
+      "title": "Admin user list",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-018",
+      "feature": "admin-accounts",
+      "phase": "B",
+      "file": "features/admin-accounts/US-018-admin-user-detail.md",
+      "title": "Admin user detail, creator requests and history",
+      "status": "backlog",
+      "priority": "high"
+    },
+    {
+      "id": "US-019",
+      "feature": "admin-accounts",
+      "phase": "B",
+      "file": "features/admin-accounts/US-019-admin-block-unblock-user.md",
+      "title": "Admin blocks and unblocks a user",
+      "status": "backlog",
+      "priority": "high"
     }
   ]
 }

@@ -27,6 +27,7 @@ export class CreatorsController {
     return {
       public_code: outcome.creator.publicCode,
       display_name: outcome.creator.displayName,
+      bio: outcome.creator.bio,
       avatar_url: outcome.creator.avatarUrl,
     };
   }

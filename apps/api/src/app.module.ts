@@ -5,6 +5,7 @@ import { InfraModule } from './common/infra/infra.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CreatorsModule } from './modules/creators/creators.module.js';
+import { CreatorModule } from './modules/creator/creator.module.js';
 import { MeModule } from './modules/me/me.module.js';
 import { TelegramWebhookModule } from './modules/telegram-webhook/telegram-webhook.module.js';
 
@@ -20,6 +21,7 @@ export class AppModule {
         AuthModule,
         MeModule,
         CreatorsModule,
+        CreatorModule,
         TelegramWebhookModule,
         ...extraModules,
       ],

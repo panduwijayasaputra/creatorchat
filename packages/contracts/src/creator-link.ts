@@ -31,6 +31,7 @@ export function creatorByCodePath(code: string): string {
 export const CreatorLinkResponseSchema = z.strictObject({
   public_code: PublicCodeSchema,
   display_name: z.string(),
+  bio: z.string().nullable(),
   avatar_url: z.string().nullable(),
 });
 export type CreatorLinkResponse = z.infer<typeof CreatorLinkResponseSchema>;

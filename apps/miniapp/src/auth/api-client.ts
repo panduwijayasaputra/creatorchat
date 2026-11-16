@@ -1,12 +1,27 @@
 import {
+  CREATOR_REQUEST_PATH,
   CreatorLinkResponseSchema,
+  CreatorRequestStateResponseSchema,
+  SubmitCreatorRequestResponseSchema,
   creatorByCodePath,
+  CREATOR_PROFILE_PATH,
+  CREATOR_TIMEZONE_PATH,
+  CREATOR_SETTINGS_PATH,
+  CreatorSettingsResponseSchema,
   ErrorResponseSchema,
   MeResponseSchema,
+  PROFILE_PATH,
   TelegramLoginResponseSchema,
+  UpdateProfileResponseSchema,
   USER_AUTH_PATH,
   type CreatorLinkResponse,
+  type CreatorRequestStateResponse,
+  type CreatorSettingsResponse,
+  type SubmitCreatorRequest,
+  type SubmitCreatorRequestResponse,
   type ErrorCode,
+  type TimezoneId,
+  type UpdateProfileRequest,
   type UserProfile,
 } from '@creatorchat/contracts';
 
@@ -41,6 +56,18 @@ export interface MiniappApi {
   me(): Promise<UserProfile>;
   /** Resolves a creator deep-link code. 404 CREATOR_NOT_FOUND / 403 FORBIDDEN_ROLE arrive as ApiError. */
   resolveCreator(publicCode: string): Promise<CreatorLinkResponse>;
+  /** Saves the caller's own profile (full desired values); returns the account as saved. */
+  updateProfile(input: UpdateProfileRequest): Promise<UserProfile>;
+  /** Creator only: own profile, public code and the bio link (403 for anyone else). */
+  getCreatorSettings(): Promise<CreatorSettingsResponse>;
+  /** Creator only: same as `updateProfile`, for the creator's public profile. */
+  updateCreatorProfile(input: UpdateProfileRequest): Promise<UserProfile>;
+  /** Creator only: sets the display timezone (display only); returns the account as saved. */
+  updateCreatorTimezone(timezone: TimezoneId): Promise<UserProfile>;
+  /** USER only: the latest creator request and, if any, the subscription that blocks a new one. */
+  getCreatorRequestState(): Promise<CreatorRequestStateResponse>;
+  /** USER only: submits the request (idempotent while one is pending). 409 CREATOR_REQUEST_BLOCKED arrives as ApiError. */
+  submitCreatorRequest(input: SubmitCreatorRequest): Promise<SubmitCreatorRequestResponse>;
   /** Called when the session could not be renewed. Returns an unsubscribe function. */
   onSessionLost(listener: (reason: SessionLossReason) => void): () => void;
   /** Called after a silent re-exchange succeeded, with the account as the server now sees it (the role may have changed). */
@@ -145,11 +172,16 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
     return renewing;
   }
 
-  async function authorized(method: string, path: string, retried = false): Promise<Response> {
-    const response = await send(method, path, { authorize: true });
+  async function authorized(
+    method: string,
+    path: string,
+    body?: unknown,
+    retried = false,
+  ): Promise<Response> {
+    const response = await send(method, path, { authorize: true, body });
     if (response.ok) return response;
     if (response.status === 401 && !retried && (await renew())) {
-      return authorized(method, path, true);
+      return authorized(method, path, body, true);
     }
     throw await toApiError(response);
   }
@@ -162,6 +194,30 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
     async resolveCreator(publicCode) {
       const response = await authorized('GET', creatorByCodePath(publicCode));
       return CreatorLinkResponseSchema.parse(await response.json());
+    },
+    async updateProfile(input) {
+      const response = await authorized('PATCH', PROFILE_PATH, input);
+      return UpdateProfileResponseSchema.parse(await response.json());
+    },
+    async getCreatorSettings() {
+      const response = await authorized('GET', CREATOR_SETTINGS_PATH);
+      return CreatorSettingsResponseSchema.parse(await response.json());
+    },
+    async updateCreatorProfile(input) {
+      const response = await authorized('PATCH', CREATOR_PROFILE_PATH, input);
+      return UpdateProfileResponseSchema.parse(await response.json());
+    },
+    async updateCreatorTimezone(timezone) {
+      const response = await authorized('PATCH', CREATOR_TIMEZONE_PATH, { timezone });
+      return UpdateProfileResponseSchema.parse(await response.json());
+    },
+    async getCreatorRequestState() {
+      const response = await authorized('GET', CREATOR_REQUEST_PATH);
+      return CreatorRequestStateResponseSchema.parse(await response.json());
+    },
+    async submitCreatorRequest(input) {
+      const response = await authorized('POST', CREATOR_REQUEST_PATH, input);
+      return SubmitCreatorRequestResponseSchema.parse(await response.json());
     },
     onSessionRenewed(listener) {
       renewedListeners.add(listener);

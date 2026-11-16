@@ -94,6 +94,9 @@ describe('loginWithTelegram', () => {
       display_name: 'Nadia Putri',
       telegram_username: 'nadia',
       avatar_url: 'https://t.me/i/userpic/320/nadia.jpg',
+      telegram_avatar_url: 'https://t.me/i/userpic/320/nadia.jpg',
+      timezone: 'Asia/Jakarta',
+      bio: null,
     });
     expect(typeof outcome.user.telegram_id).toBe('string');
     expect(outcome.expiresIn).toBe(3600);
@@ -133,6 +136,9 @@ describe('loginWithTelegram', () => {
     expect(second.user.display_name).toBe('Nadia Edit');
     expect(second.user.avatar_url).toBe('https://cdn.example/a.png');
     expect(second.user.telegram_username).toBe('new_handle');
+    // The Telegram photo follows Telegram; the app photo and bio stay as the user set them.
+    expect(second.user.telegram_avatar_url).toBe('https://x.test/p.jpg');
+    expect(second.user.bio).toBe('hello');
     const row = await prisma.user.findUniqueOrThrow({ where: { id: first.user.id } });
     expect(row.bio).toBe('hello');
     expect(await prisma.user.count()).toBe(1);
@@ -142,6 +148,12 @@ describe('loginWithTelegram', () => {
   it('drops a photo that is not an https URL', async () => {
     const outcome = await loginOk(initData({ ...nadia, photo_url: 'javascript:alert(1)' }));
     expect(outcome.user.avatar_url).toBeNull();
+    expect(outcome.user.telegram_avatar_url).toBeNull();
+  });
+
+  it('cuts a long Telegram name to the 40-character profile limit', async () => {
+    const outcome = await loginOk(initData({ ...nadia, first_name: 'A'.repeat(60) }));
+    expect(Array.from(outcome.user.display_name)).toHaveLength(40);
   });
 
   it('keeps a CREATOR a CREATOR on login and reports the database role', async () => {

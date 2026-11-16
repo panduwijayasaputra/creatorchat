@@ -15,6 +15,9 @@ const profile = {
   display_name: 'Nadia',
   telegram_username: null,
   avatar_url: null,
+  bio: null,
+  telegram_avatar_url: null,
+  timezone: 'Asia/Jakarta',
 };
 
 describe('user auth contracts', () => {

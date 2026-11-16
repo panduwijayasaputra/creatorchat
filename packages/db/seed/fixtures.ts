@@ -56,3 +56,24 @@ export const USER_FIXTURES: readonly UserFixture[] = [
     telegramUsername: 'luna_sample',
   },
 ];
+
+export interface SubscriptionFixture {
+  customerTelegramId: bigint;
+  creatorPublicCode: string;
+  startsAt: Date;
+  endsAt: Date;
+}
+
+/**
+ * Raka Putra has an active subscription to Salsa until 27 Nov 2026, so the "cannot apply while a
+ * customer subscription is active" paths (ProfileBlocked, CreatorRequestBlocked, a failing
+ * approval) can be tried locally. The seed is local-only.
+ */
+export const SUBSCRIPTION_FIXTURES: readonly SubscriptionFixture[] = [
+  {
+    customerTelegramId: 9_000_000_012n,
+    creatorPublicCode: 'salsa234',
+    startsAt: new Date('2026-11-01T00:00:00.000Z'),
+    endsAt: new Date('2026-11-27T00:00:00.000Z'),
+  },
+];

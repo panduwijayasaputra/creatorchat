@@ -3,4 +3,7 @@ export * from './logging/index.js';
 export * from './admin-auth/index.js';
 export * from './user-auth/index.js';
 export * from './creator-link/index.js';
+export * from './creator-request/index.js';
+export * from './profile/index.js';
 export * from './account-security/index.js';
+export * from './creator-settings/index.js';

@@ -1,4 +1,12 @@
-import { Button, HourglassIcon, RefreshIcon, SearchInput, StatusChip } from '@creatorchat/ui';
+import {
+  Avatar,
+  Button,
+  HourglassIcon,
+  RefreshIcon,
+  SearchInput,
+  StatusChip,
+  Switch,
+} from '@creatorchat/ui';
 import type { ReactNode } from 'react';
 import { CREATOR_NAV, CUSTOMER_NAV } from '../app/nav-config';
 import { BottomNav } from '../components/BottomNav';
@@ -59,6 +67,14 @@ export function Preview() {
                 Kirim Ulang
               </Button>
             </div>
+          </div>
+        </Card>
+        <Card id="avatar-switch" title="Avatar dan switch">
+          <div className={styles.buttons}>
+            <Avatar size={72} />
+            <Avatar size={96} />
+            <Switch checked label="Notifikasi pesan" disabled />
+            <Switch checked={false} label="Tampilkan isi pesan di notifikasi" disabled />
           </div>
         </Card>
         <Card id="inputs" title="Input">

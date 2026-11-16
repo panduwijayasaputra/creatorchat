@@ -4,6 +4,7 @@ import { isPublicCode } from './public-code.js';
 export interface ResolvedCreatorLink {
   publicCode: string;
   displayName: string;
+  bio: string | null;
   avatarUrl: string | null;
 }
 
@@ -22,7 +23,10 @@ export class CreatorLinkService {
     if (!isPublicCode(input.code)) return { kind: 'not_found' };
     const creator = await this.prisma.creator.findFirst({
       where: { publicCode: input.code, status: 'ACTIVE', user: { status: 'ACTIVE' } },
-      select: { publicCode: true, user: { select: { displayName: true, avatarUrl: true } } },
+      select: {
+        publicCode: true,
+        user: { select: { displayName: true, bio: true, avatarUrl: true } },
+      },
     });
     if (!creator) return { kind: 'not_found' };
     return {
@@ -30,6 +34,7 @@ export class CreatorLinkService {
       creator: {
         publicCode: creator.publicCode,
         displayName: creator.user.displayName,
+        bio: creator.user.bio,
         avatarUrl: creator.user.avatarUrl,
       },
     };

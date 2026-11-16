@@ -94,6 +94,57 @@
         "TASK-046",
         "TASK-047"
       ]
+    },
+    {
+      "id": "US-007",
+      "title": "USER profile page and edit profile",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-048",
+        "TASK-049",
+        "TASK-050",
+        "TASK-051",
+        "TASK-052",
+        "TASK-053"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Creator settings, edit profile and bio link",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-054",
+        "TASK-055",
+        "TASK-056",
+        "TASK-057",
+        "TASK-058"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Creator display timezone",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-059",
+        "TASK-060",
+        "TASK-061"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Submit a creator request",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-062",
+        "TASK-063",
+        "TASK-064",
+        "TASK-065",
+        "TASK-066"
+      ]
     }
   ]
 }

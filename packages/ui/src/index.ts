@@ -45,3 +45,5 @@ export {
   type PaginationProps,
 } from './components/data-table/Pagination';
 export { buildPageList, type PageItem } from './components/data-table/page-list';
+export { Avatar, type AvatarProps } from './components/avatar/Avatar';
+export { Switch, type SwitchProps } from './components/switch/Switch';

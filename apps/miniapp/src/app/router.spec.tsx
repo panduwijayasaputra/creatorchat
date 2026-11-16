@@ -41,7 +41,7 @@ describe('Mini App routes', () => {
     expect(await screen.findByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
   });
 
-  it.each(['/chats', '/explore', '/subscriptions', '/profile'])(
+  it.each(['/chats', '/explore', '/subscriptions'])(
     'shows the customer shell with the placeholder at %s',
     async (path) => {
       await renderAt(path);
@@ -51,7 +51,14 @@ describe('Mini App routes', () => {
     },
   );
 
-  it.each(['/inbox', '/gallery', '/broadcast', '/settings'])(
+  it('shows the customer shell with the real profile (not a placeholder) at /profile', async () => {
+    await renderAt('/profile');
+    expect(screen.getByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Profil');
+  });
+
+  it.each(['/inbox', '/gallery', '/broadcast'])(
     'shows the creator shell with the placeholder at %s',
     async (path) => {
       await renderAt(path, { api: createFakeMiniappApi({ me: [maya] }) });
@@ -60,6 +67,15 @@ describe('Mini App routes', () => {
       expect(screen.getByTestId('not-implemented')).toBeInTheDocument();
     },
   );
+
+  it('shows the creator shell with the real settings (not a placeholder) at /settings', async () => {
+    await renderAt('/settings', { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Pengaturan' }),
+    ).toBeInTheDocument();
+  });
 
   it('renders unknown paths as a neutral not-found placeholder', async () => {
     await renderAt('/tidak-ada');
@@ -90,6 +106,7 @@ describe('Mini App routes', () => {
       }),
     );
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Profil');
-    expect(screen.queryByRole('button')).toBeNull();
+    // No role switcher: nothing on the page offers to change role or mode.
+    expect(screen.queryByRole('button', { name: /peran|mode|beralih|creator/i })).toBeNull();
   });
 });

@@ -25,6 +25,11 @@ export const UserProfileSchema = z.strictObject({
   display_name: z.string(),
   telegram_username: z.string().nullable(),
   avatar_url: z.string().nullable(),
+  bio: z.string().nullable(),
+  /** The Telegram photo as of the last login; "Pakai Foto Telegram" resets avatar_url to it. */
+  telegram_avatar_url: z.string().nullable(),
+  /** IANA zone used to display times (display only; stored timestamps stay UTC). */
+  timezone: z.string(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 

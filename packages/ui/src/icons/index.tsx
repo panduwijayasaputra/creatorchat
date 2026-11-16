@@ -165,3 +165,29 @@ export const UserOffIcon = createIcon(
     <path d="M4.5 20.5c.6-3.8 3.6-6 7.5-6s6.9 2.2 7.5 6M3 3l18 18" />
   </>,
 );
+export const ShieldIcon = createIcon(
+  'Shield',
+  <path d="M12 3l7.5 2.8v5.7c0 4.6-3.2 7.9-7.5 9.5-4.3-1.6-7.5-4.9-7.5-9.5V5.8z" />,
+);
+export const HelpCircleIcon = createIcon(
+  'HelpCircle',
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.9M12 17v.01" />
+  </>,
+);
+export const UploadIcon = createIcon('Upload', <path d="M12 16V4.5M7 9.5l5-5 5 5M4.5 20h15" />);
+export const CopyIcon = createIcon(
+  'Copy',
+  <>
+    <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.5" />
+    <path d="M15.5 8.5V6.5A2.5 2.5 0 0 0 13 4H6.5A2.5 2.5 0 0 0 4 6.5V13a2.5 2.5 0 0 0 2.5 2.5h2" />
+  </>,
+);
+export const GlobeIcon = createIcon(
+  'Globe',
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9z" />
+  </>,
+);

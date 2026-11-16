@@ -1,4 +1,4 @@
-import { test, type Browser, type Locator, type Page } from '@playwright/test';
+import { test, type Browser, type Locator, type Page, type Route } from '@playwright/test';
 import { ADMIN_URL, MINIAPP_URL, boardRect, compare, writeReport, type Comparison } from '../lib';
 
 /**
@@ -146,6 +146,161 @@ const loginStates: Item[] = (
     locate: stateCard(state.label),
   },
   ...state,
+}));
+
+const MINIAPP_USER = {
+  id: '5b2f7f0e-7f0c-4a53-9d0c-2b3b5c1a9e11',
+  telegram_id: '424242',
+  role: 'USER',
+  status: 'ACTIVE',
+  display_name: 'Nadia Putri',
+  telegram_username: 'nadia',
+  avatar_url: null,
+  bio: null,
+  telegram_avatar_url: null,
+  timezone: 'Asia/Jakarta',
+};
+
+/** The account the edit boards show (EditStates uses "Maya L" with a bio; EditProfile "Maya Lestari"). */
+const mockEditProfileUser = async (p: Page, displayName = 'Maya Lestari') => {
+  await p.route('**/v1/me', (r) =>
+    r.fulfill({
+      status: 200,
+      json: {
+        ...MINIAPP_USER,
+        display_name: displayName,
+        telegram_username: 'mayalestari',
+        bio: 'Pecinta masak dan buku resep.',
+      },
+    }),
+  );
+};
+
+const editStateCard = (label: string) => (page: Page) =>
+  page.locator(`xpath=//div[text()='${label}']/following-sibling::div[1]`);
+
+type EditState = {
+  name: string;
+  label: string;
+  /** Answers the save request; leaving it out means the request never completes ("Menyimpan"). */
+  patch?: (route: Route) => void | Promise<void>;
+  /** Empty both fields before saving (the validation card). */
+  clear?: boolean;
+};
+
+const savedMaya = {
+  ...MINIAPP_USER,
+  display_name: 'Maya L',
+  telegram_username: 'mayalestari',
+  bio: 'Pecinta masak dan buku resep.',
+};
+
+const editStateSpecs: EditState[] = [
+  { name: 'miniapp-edit-1-menyimpan', label: '1 · Menyimpan', patch: () => undefined },
+  { name: 'miniapp-edit-2-validasi', label: '2 · Validasi', clear: true },
+  {
+    name: 'miniapp-edit-3-berhasil',
+    label: '3 · Berhasil',
+    patch: (r) => r.fulfill({ status: 200, json: savedMaya }),
+  },
+  {
+    name: 'miniapp-edit-4-gagal',
+    label: '4 · Gagal, isian dipertahankan',
+    patch: (r) => r.abort('connectionrefused'),
+  },
+];
+
+const editStates: Item[] = editStateSpecs.map(({ name, label, patch, clear }) => ({
+  name,
+  app: 'miniapp',
+  path: '/profile/edit',
+  viewport: { width: 390, height: 960 },
+  scale: 1,
+  session: 'user',
+  mock: async (p) => {
+    await mockEditProfileUser(p, 'Maya L');
+    if (patch) await p.route('**/v1/me/profile', patch);
+  },
+  prepare: async (p) => {
+    if (clear) {
+      await p.getByLabel('Nama tampil').fill('');
+      await p.getByLabel('Bio singkat (opsional)').fill('');
+    }
+    await p.getByRole('button', { name: 'Simpan Perubahan' }).click();
+    if (name.endsWith('menyimpan')) await p.getByRole('button', { name: /Menyimpan/ }).waitFor();
+    if (name.endsWith('validasi')) await p.getByText('Nama tampil wajib diisi.').waitFor();
+    if (name.endsWith('berhasil')) await p.getByRole('status').waitFor();
+    if (name.endsWith('gagal')) await p.getByRole('alert').waitFor();
+  },
+  actual: (p) => p.locator('#root > form'),
+  reference: { board: 'EditStates', png: 'miniapp/EditStates.png', locate: editStateCard(label) },
+}));
+
+/** The creator request boards (US-010): GET answers the state, POST (the submit) is per card. */
+const mockCreatorRequest = async (
+  p: Page,
+  options: {
+    blocked?: { creator_name: string; ends_at: string } | null;
+    post?: (route: Route) => void | Promise<void>;
+  } = {},
+) => {
+  await p.route('**/v1/me', (r) =>
+    r.fulfill({
+      status: 200,
+      json: { ...MINIAPP_USER, display_name: 'Maya Lestari', telegram_username: 'mayalestari' },
+    }),
+  );
+  await p.route('**/v1/me/creator-request', (r) => {
+    if (r.request().method() === 'POST' && options.post) return options.post(r);
+    return r.fulfill({ status: 200, json: { request: null, blocked: options.blocked ?? null } });
+  });
+};
+
+const requestStateSpecs: {
+  name: string;
+  label: string;
+  post?: (route: Route) => void | Promise<void>;
+}[] = [
+  { name: 'miniapp-request-1-validasi', label: '1 · Validasi' },
+  { name: 'miniapp-request-2-mengirim', label: '2 · Mengirim', post: () => undefined },
+  {
+    name: 'miniapp-request-3-gagal',
+    label: '3 · Gagal, isian dipertahankan',
+    post: (r) => r.abort('connectionrefused'),
+  },
+];
+
+const requestStates: Item[] = requestStateSpecs.map(({ name, label, post }) => ({
+  name,
+  app: 'miniapp',
+  path: '/profile/creator-request',
+  viewport: { width: 390, height: 1180 },
+  scale: 1,
+  session: 'user',
+  mock: (p) => mockCreatorRequest(p, post ? { post } : {}),
+  prepare: async (p) => {
+    const link = p.getByLabel('Link profil Instagram');
+    await link.waitFor();
+    if (name.endsWith('validasi')) {
+      await link.fill('instagram maya');
+    } else {
+      await link.fill('https://instagram.com/mayalestari');
+      await p
+        .getByLabel('Deskripsi singkat konten')
+        .fill('Resep dan tips masak rumahan untuk pemula, dibagikan lewat foto dan video pendek.');
+      await p.getByRole('checkbox').check();
+    }
+    await p.getByRole('button', { name: 'Kirim Permintaan' }).click();
+    if (name.endsWith('validasi')) await p.getByText('Deskripsi wajib diisi.').waitFor();
+    if (name.endsWith('mengirim')) await p.getByRole('button', { name: /Mengirim/ }).waitFor();
+    if (name.endsWith('gagal')) await p.getByRole('alert').waitFor();
+  },
+  actual: (p) => p.locator('#root > form'),
+  reference: {
+    board: 'RequestStates',
+    png: 'miniapp/RequestStates.png',
+    locate: editStateCard(label),
+  },
 }));
 
 const items: Item[] = [
@@ -377,6 +532,8 @@ const items: Item[] = [
         r.fulfill({ status: 404, json: envelope('CREATOR_NOT_FOUND') }),
       );
     },
+    // Wait for the resolved state: the loading screen has its own <main> that gets replaced.
+    prepare: (p) => p.getByRole('heading', { name: 'Creator tidak tersedia' }).waitFor(),
     actual: (p) => p.locator('main'),
     reference: {
       board: 'StatesProfile',
@@ -384,6 +541,210 @@ const items: Item[] = [
       // The heading text also sits inside the card, so take the first match (the label).
       locate: (p) =>
         p.locator(`xpath=(//div[text()='Creator tidak tersedia'])[1]/following-sibling::div[1]`),
+    },
+  },
+  // ---- Profile (US-007): the whole board, nav included ----
+  {
+    name: 'miniapp-profile',
+    app: 'miniapp',
+    path: '/profile',
+    viewport: { width: 390, height: 1300 },
+    scale: 2,
+    session: 'user',
+    mock: async (p) => {
+      await p.route('**/v1/me', (r) =>
+        r.fulfill({
+          status: 200,
+          json: { ...MINIAPP_USER, display_name: 'Maya Lestari', telegram_username: 'mayalestari' },
+        }),
+      );
+    },
+    actual: (p) => p.locator('#root > div').first(),
+    reference: {
+      board: 'Profile',
+      png: 'miniapp/Profile.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  // ---- Edit profile (US-007): EditProfile and the four EditStates cards ----
+  {
+    name: 'miniapp-edit-profile',
+    app: 'miniapp',
+    path: '/profile/edit',
+    viewport: { width: 390, height: 960 },
+    scale: 2,
+    session: 'user',
+    mock: mockEditProfileUser,
+    actual: (p) => p.locator('#root > form'),
+    reference: {
+      board: 'EditProfile',
+      png: 'miniapp/EditProfile.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  ...editStates,
+  // ---- Creator request (US-010): CreatorRequest, the three RequestStates cards, CreatorRequestBlocked ----
+  {
+    name: 'miniapp-creator-request',
+    app: 'miniapp',
+    path: '/profile/creator-request',
+    viewport: { width: 390, height: 1180 },
+    scale: 2,
+    session: 'user',
+    mock: (p) => mockCreatorRequest(p),
+    prepare: async (p) => {
+      await p.getByLabel('Nama creator').waitFor();
+    },
+    actual: (p) => p.locator('#root > form'),
+    reference: {
+      board: 'CreatorRequest',
+      png: 'miniapp/CreatorRequest.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  ...requestStates,
+  {
+    name: 'miniapp-creator-request-blocked',
+    app: 'miniapp',
+    path: '/profile/creator-request',
+    viewport: { width: 390, height: 1180 },
+    scale: 2,
+    session: 'user',
+    mock: (p) =>
+      mockCreatorRequest(p, {
+        blocked: { creator_name: 'Salsa Maheswari', ends_at: '2026-11-27T00:00:00.000Z' },
+      }),
+    prepare: async (p) => {
+      await p.getByText('Belum bisa mengajukan').waitFor();
+    },
+    actual: (p) => p.locator('#root > form'),
+    reference: {
+      board: 'CreatorRequestBlocked',
+      png: 'miniapp/CreatorRequestBlocked.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  {
+    name: 'miniapp-profile-blocked',
+    app: 'miniapp',
+    path: '/profile',
+    viewport: { width: 390, height: 1300 },
+    scale: 2,
+    session: 'user',
+    mock: async (p) => {
+      await p.route('**/v1/me', (r) =>
+        r.fulfill({
+          status: 200,
+          json: {
+            ...MINIAPP_USER,
+            display_name: 'Raka Putra',
+            telegram_username: 'rakaputra',
+          },
+        }),
+      );
+      await p.route('**/v1/me/creator-request', (r) =>
+        r.fulfill({
+          status: 200,
+          json: {
+            request: null,
+            blocked: { creator_name: 'Salsa Maheswari', ends_at: '2026-11-27T00:00:00.000Z' },
+          },
+        }),
+      );
+    },
+    prepare: async (p) => {
+      await p.getByText('Langganan aktif: Salsa Maheswari').waitFor();
+    },
+    actual: (p) => p.locator('#root > div').first(),
+    reference: {
+      board: 'ProfileBlocked',
+      png: 'miniapp/ProfileBlocked.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  // ---- Creator settings (US-008): CrSettings and CrEditProfile ----
+  {
+    name: 'miniapp-creator-settings',
+    app: 'miniapp',
+    path: '/settings',
+    viewport: { width: 390, height: 1700 },
+    scale: 2,
+    session: 'creator',
+    mock: async (p) => {
+      const profile = {
+        ...MINIAPP_USER,
+        role: 'CREATOR',
+        display_name: 'Salsa Maheswari',
+        telegram_username: 'salsa.maheswari',
+        bio: 'Suka masak sederhana, pasar pagi, dan cerita kecil di balik me…',
+      };
+      await p.route('**/v1/me', (r) => r.fulfill({ status: 200, json: profile }));
+      await p.route('**/v1/creator/settings', (r) =>
+        r.fulfill({
+          status: 200,
+          json: {
+            profile,
+            public_code: 'salsa234',
+            bio_link: 'https://t.me/CreatorChatBot?start=c_salsa234',
+          },
+        }),
+      );
+    },
+    actual: (p) => p.locator('#root > div').first(),
+    reference: {
+      board: 'CrSettings',
+      png: 'miniapp/CrSettings.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  {
+    name: 'miniapp-creator-edit-profile',
+    app: 'miniapp',
+    path: '/settings/profile',
+    viewport: { width: 390, height: 960 },
+    scale: 2,
+    session: 'creator',
+    mock: async (p) => {
+      await p.route('**/v1/me', (r) =>
+        r.fulfill({
+          status: 200,
+          json: {
+            ...MINIAPP_USER,
+            role: 'CREATOR',
+            display_name: 'Salsa Maheswari',
+            telegram_username: 'salsa.maheswari',
+            bio: 'Suka masak sederhana, pasar pagi, dan cerita kecil di balik meja makan.',
+          },
+        }),
+      );
+    },
+    actual: (p) => p.locator('#root > form'),
+    reference: {
+      board: 'CrEditProfile',
+      png: 'miniapp/CrEditProfile.png',
+      locate: (p) => p.locator('body > div').first(),
+    },
+  },
+  {
+    name: 'miniapp-creator-timezone',
+    app: 'miniapp',
+    path: '/settings/timezone',
+    viewport: { width: 390, height: 844 },
+    scale: 2,
+    session: 'creator',
+    mock: async (p) => {
+      await p.route('**/v1/me', (r) =>
+        r.fulfill({
+          status: 200,
+          json: { ...MINIAPP_USER, role: 'CREATOR', display_name: 'Salsa Maheswari' },
+        }),
+      );
+    },
+    actual: (p) => p.locator('#root > div').first(),
+    reference: {
+      board: 'CrTimezone',
+      png: 'miniapp/CrTimezone.png',
+      locate: (p) => p.locator('body > div').first(),
     },
   },
   // ---- Mini App shells at 390 x 844 ----
@@ -433,16 +794,6 @@ async function stubAdminSession(page: Page, signedOut: boolean) {
     route.fulfill({ status: 401, json: envelope('UNAUTHENTICATED') }),
   );
 }
-
-const MINIAPP_USER = {
-  id: '5b2f7f0e-7f0c-4a53-9d0c-2b3b5c1a9e11',
-  telegram_id: '424242',
-  role: 'USER',
-  status: 'ACTIVE',
-  display_name: 'Nadia Putri',
-  telegram_username: 'nadia',
-  avatar_url: null,
-};
 
 /**
  * The Mini App sheets run without the API and outside Telegram, so Telegram's WebApp object and the

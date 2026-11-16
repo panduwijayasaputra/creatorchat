@@ -122,6 +122,7 @@ describe('creator deep link, end to end', () => {
     expect(CreatorLinkResponseSchema.parse(await resolved.json())).toEqual({
       public_code: 'salsa234',
       display_name: 'Salsa',
+      bio: null,
       avatar_url: null,
     });
     // Resolving a link grants nothing: still no subscription-like data, same role.

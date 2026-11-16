@@ -1,4 +1,12 @@
-import type { CreatorLinkResponse, UserProfile } from '@creatorchat/contracts';
+import type {
+  CreatorLinkResponse,
+  CreatorRequestStateResponse,
+  CreatorSettingsResponse,
+  SubmitCreatorRequest,
+  SubmitCreatorRequestResponse,
+  UpdateProfileRequest,
+  UserProfile,
+} from '@creatorchat/contracts';
 import type { SeenFlag } from '../src/auth/AuthProvider';
 import {
   ApiError,
@@ -16,6 +24,9 @@ export const nadia: UserProfile = {
   display_name: 'Nadia Putri',
   telegram_username: 'nadia',
   avatar_url: null,
+  bio: null,
+  telegram_avatar_url: null,
+  timezone: 'Asia/Jakarta',
 };
 
 export const maya: UserProfile = {
@@ -36,6 +47,24 @@ export interface FakeMiniappApi extends MiniappApi {
   resolveCalls: string[];
   /** Next outcomes for resolveCreator, consumed in order; default is a creator named Salsa. */
   resolveResults: (CreatorLinkResponse | Error)[];
+  updateProfileCalls: UpdateProfileRequest[];
+  /** Next outcomes for getCreatorSettings; default is `maya` with a bot link. */
+  creatorSettingsResults: (CreatorSettingsResponse | Error)[];
+  creatorSettingsCalls: number;
+  /** Inputs that went through the creator endpoint (also recorded in `updateProfileCalls`). */
+  updateCreatorCalls: UpdateProfileRequest[];
+  /** Zones sent to updateCreatorTimezone. */
+  timezoneCalls: string[];
+  /** Next outcomes for updateCreatorTimezone; default echoes the zone onto `maya`. */
+  timezoneResults: (UserProfile | Error)[];
+  /** Next outcomes for getCreatorRequestState; default is no request and no block. */
+  creatorRequestStateResults: (CreatorRequestStateResponse | Error)[];
+  creatorRequestStateCalls: number;
+  /** Bodies sent to submitCreatorRequest, and its next outcomes (default: a PENDING request echoing the input). */
+  submitRequestCalls: SubmitCreatorRequest[];
+  submitRequestResults: (SubmitCreatorRequestResponse | Error)[];
+  /** Next outcomes for updateProfile; default echoes the input onto `nadia`. */
+  updateProfileResults: (UserProfile | Error)[];
 }
 
 /**
@@ -47,6 +76,11 @@ export function createFakeMiniappApi(
     login?: (UserProfile | Error)[];
     me?: (UserProfile | Error)[];
     resolve?: (CreatorLinkResponse | Error)[];
+    updateProfile?: (UserProfile | Error)[];
+    creatorSettings?: (CreatorSettingsResponse | Error)[];
+    timezone?: (UserProfile | Error)[];
+    creatorRequestState?: (CreatorRequestStateResponse | Error)[];
+    submitRequest?: (SubmitCreatorRequestResponse | Error)[];
   } = {},
 ): FakeMiniappApi {
   const listeners = new Set<(reason: SessionLossReason) => void>();
@@ -58,11 +92,84 @@ export function createFakeMiniappApi(
     meResults: [...(options.me ?? [])],
     resolveCalls: [],
     resolveResults: [...(options.resolve ?? [])],
+    updateProfileCalls: [],
+    updateProfileResults: [...(options.updateProfile ?? [])],
+    creatorSettingsResults: [...(options.creatorSettings ?? [])],
+    creatorSettingsCalls: 0,
+    updateCreatorCalls: [],
+    timezoneCalls: [],
+    timezoneResults: [...(options.timezone ?? [])],
+    creatorRequestStateResults: [...(options.creatorRequestState ?? [])],
+    creatorRequestStateCalls: 0,
+    submitRequestCalls: [],
+    submitRequestResults: [...(options.submitRequest ?? [])],
+    async getCreatorRequestState() {
+      api.creatorRequestStateCalls += 1;
+      const next = api.creatorRequestStateResults.shift() ?? { request: null, blocked: null };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async submitCreatorRequest(input) {
+      api.submitRequestCalls.push(input);
+      const next = api.submitRequestResults.shift() ?? {
+        request: {
+          id: '0d9b6f0e-7f0c-4a53-9d0c-2b3b5c1a9e33',
+          status: 'PENDING' as const,
+          creator_name: input.creator_name.trim(),
+          instagram_url: input.instagram_url.trim(),
+          creator_type: input.creator_type,
+          description: input.description.trim(),
+          created_at: '2026-11-16T05:00:00.000Z',
+          reviewed_at: null,
+          review_reason: null,
+        },
+      };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async updateCreatorTimezone(timezone) {
+      api.timezoneCalls.push(timezone);
+      const next = api.timezoneResults.shift() ?? { ...maya, timezone };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async getCreatorSettings() {
+      api.creatorSettingsCalls += 1;
+      const next = api.creatorSettingsResults.shift() ?? {
+        profile: maya,
+        public_code: 'salsa234',
+        bio_link: 'https://t.me/TestBot?start=c_salsa234',
+      };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async updateCreatorProfile(input) {
+      api.updateCreatorCalls.push(input);
+      api.updateProfileCalls.push(input);
+      const next = api.updateProfileResults.shift() ?? {
+        ...maya,
+        display_name: input.display_name.trim(),
+        bio: input.bio?.trim() || null,
+      };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async updateProfile(input) {
+      api.updateProfileCalls.push(input);
+      const next = api.updateProfileResults.shift() ?? {
+        ...nadia,
+        display_name: input.display_name.trim(),
+        bio: input.bio?.trim() || null,
+      };
+      if (next instanceof Error) throw next;
+      return next;
+    },
     async resolveCreator(code) {
       api.resolveCalls.push(code);
       const next = api.resolveResults.shift() ?? {
         public_code: code,
         display_name: 'Salsa',
+        bio: null,
         avatar_url: null,
       };
       if (next instanceof Error) throw next;

@@ -9,7 +9,7 @@ import { resolveRequestId } from './common/request-id/request-id.js';
 
 const BODY_LIMIT_BYTES = 1024 * 1024; // 1 MiB; media uploads use presigned URLs, not this API.
 /** Responses under these paths carry or reveal session state and are never cached. */
-const NO_STORE_PREFIXES = ['/v1/admin', '/v1/auth', '/v1/me', '/v1/creators', '/v1/telegram'];
+const NO_STORE_PREFIXES = ['/v1/admin', '/v1/auth', '/v1/me', '/v1/creator', '/v1/telegram'];
 
 export interface CreateAppOptions {
   /** Where pino writes; defaults to stdout. Tests pass a capturing stream. */

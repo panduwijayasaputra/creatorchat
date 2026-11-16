@@ -102,7 +102,7 @@ const byCode = (code: string, token?: string) =>
   });
 
 describe('GET /v1/creators/by-code/:publicCode', () => {
-  it('returns exactly public_code, display_name and avatar_url to a signed-in USER and writes nothing', async () => {
+  it('returns exactly public_code, display_name, bio and avatar_url to a signed-in USER and writes nothing', async () => {
     await makeCreator('k4m5x2qa');
     const { token } = await signIn();
     const before = [
@@ -116,9 +116,15 @@ describe('GET /v1/creators/by-code/:publicCode', () => {
     expect(CreatorLinkResponseSchema.parse(res.json())).toEqual({
       public_code: 'k4m5x2qa',
       display_name: 'Salsa',
+      bio: null,
       avatar_url: 'https://example.test/s.jpg',
     });
-    expect(Object.keys(res.json()).sort()).toEqual(['avatar_url', 'display_name', 'public_code']);
+    expect(Object.keys(res.json()).sort()).toEqual([
+      'avatar_url',
+      'bio',
+      'display_name',
+      'public_code',
+    ]);
     expect([
       await prisma.user.count(),
       await prisma.session.count(),

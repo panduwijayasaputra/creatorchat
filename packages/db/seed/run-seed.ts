@@ -1,6 +1,6 @@
 import { Role, type PrismaClient } from '../src/index.js';
 import { generatePassword, hashPassword, normalizeAdminUsername } from './admin.js';
-import { USER_FIXTURES } from './fixtures.js';
+import { SUBSCRIPTION_FIXTURES, USER_FIXTURES } from './fixtures.js';
 
 export interface SeedOptions {
   adminUsername?: string;
@@ -16,6 +16,7 @@ export interface SeedResult {
   usersCreated: number;
   usersExisting: number;
   creatorsCreated: number;
+  subscriptionsCreated: number;
 }
 
 /** Idempotent: re-running never duplicates rows, never changes an existing admin's password. */
@@ -60,6 +61,28 @@ export async function runSeed(
     }
   }
 
+  let subscriptionsCreated = 0;
+  for (const fixture of SUBSCRIPTION_FIXTURES) {
+    const customer = await prisma.user.findUnique({
+      where: { telegramId: fixture.customerTelegramId },
+    });
+    const creator = await prisma.creator.findUnique({
+      where: { publicCode: fixture.creatorPublicCode },
+    });
+    if (!customer || !creator) continue;
+    const key = { customerId_creatorId: { customerId: customer.id, creatorId: creator.id } };
+    if (await prisma.subscription.findUnique({ where: key })) continue;
+    await prisma.subscription.create({
+      data: {
+        customerId: customer.id,
+        creatorId: creator.id,
+        startsAt: fixture.startsAt,
+        endsAt: fixture.endsAt,
+      },
+    });
+    subscriptionsCreated += 1;
+  }
+
   return {
     adminUsername,
     adminCreated,
@@ -67,5 +90,6 @@ export async function runSeed(
     usersCreated,
     usersExisting: USER_FIXTURES.length - usersCreated,
     creatorsCreated,
+    subscriptionsCreated,
   };
 }

@@ -3,6 +3,7 @@ export interface TelegramWebApp {
   initData: string;
   ready(): void;
   expand(): void;
+  openTelegramLink?(url: string): void;
 }
 
 declare global {
@@ -38,4 +39,11 @@ const BOT_USERNAME = /^[A-Za-z][A-Za-z0-9_]{3,31}$/;
 export function botUrl(username: string | undefined): string | null {
   const name = username?.trim().replace(/^@/, '');
   return name && BOT_USERNAME.test(name) ? `https://t.me/${name}` : null;
+}
+
+/** Opens a t.me link inside Telegram when the WebApp can, otherwise as a normal link in a new tab. */
+export function openTelegramLink(url: string): void {
+  const webApp = window.Telegram?.WebApp;
+  if (webApp?.openTelegramLink) webApp.openTelegramLink(url);
+  else window.open(url, '_blank', 'noopener,noreferrer');
 }

@@ -32,6 +32,17 @@ enum CreatorStatus {
   BLOCKED
 }
 
+enum CreatorType {
+  HUMAN
+  AI_CHARACTER
+}
+
+enum CreatorApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum AuditActorType {
   ADMIN
   USER
@@ -39,25 +50,30 @@ enum AuditActorType {
 }
 
 model User {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// Telegram numeric ID. BigInt in the DB, string in JSON. Never use username as identity.
-  telegramId       BigInt        @unique @map("telegram_id")
-  role             Role          @default(USER)
-  status           AccountStatus @default(ACTIVE)
-  displayName      String        @map("display_name")
+  telegramId        BigInt        @unique @map("telegram_id")
+  role              Role          @default(USER)
+  status            AccountStatus @default(ACTIVE)
+  displayName       String        @map("display_name")
   /// Mutable, informational only.
-  telegramUsername String?       @map("telegram_username")
-  avatarUrl        String?       @map("avatar_url")
-  bio              String?
+  telegramUsername  String?       @map("telegram_username")
+  /// The app photo (starts as the Telegram photo; the user may reset it back).
+  avatarUrl         String?       @map("avatar_url")
+  /// The Telegram photo as of the last login (https only). Refreshed on every login.
+  telegramAvatarUrl String?       @map("telegram_avatar_url")
+  bio               String?
   /// IANA timezone used for display only.
-  timezone         String        @default("Asia/Jakarta")
+  timezone          String        @default("Asia/Jakarta")
   /// Bumped on block / role change so stale sessions lose privileges.
-  sessionVersion   Int           @default(1) @map("session_version")
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  sessionVersion    Int           @default(1) @map("session_version")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions Session[]
-  creator  Creator?
+  sessions            Session[]
+  creator             Creator?
+  creatorApplications CreatorApplication[]
+  subscriptions       Subscription[]
 
   @@map("users")
 }
@@ -71,7 +87,8 @@ model AdminAccount {
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions Session[]
+  sessions             Session[]
+  reviewedApplications CreatorApplication[]
 
   @@map("admin_accounts")
 }
@@ -87,9 +104,54 @@ model Creator {
   createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  subscriptions Subscription[]
 
   @@map("creators")
+}
+
+/// A user's request to become a creator (US-010). History is kept: a rejected request is never edited,
+/// a new one is created instead. At most one PENDING row per user (partial unique index in the migration).
+model CreatorApplication {
+  id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String                   @map("user_id") @db.Uuid
+  creatorName       String                   @map("creator_name")
+  /// Normalised to https://instagram.com/<handle> by the API.
+  instagramUrl      String                   @map("instagram_url")
+  creatorType       CreatorType              @map("creator_type")
+  description       String
+  status            CreatorApplicationStatus @default(PENDING)
+  reviewedByAdminId String?                  @map("reviewed_by_admin_id") @db.Uuid
+  reviewedAt        DateTime?                @map("reviewed_at") @db.Timestamptz(3)
+  reviewReason      String?                  @map("review_reason")
+  createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user       User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reviewedBy AdminAccount? @relation(fields: [reviewedByAdminId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@map("creator_applications")
+}
+
+/// Minimal customer access record (US-010): enough for the "no active or future subscription" rule.
+/// Grant / extend / revoke and the event history come with Phase C.
+model Subscription {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String    @map("customer_id") @db.Uuid
+  creatorId  String    @map("creator_id") @db.Uuid
+  startsAt   DateTime  @map("starts_at") @db.Timestamptz(3)
+  endsAt     DateTime  @map("ends_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  customer User    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  creator  Creator @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+
+  @@unique([customerId, creatorId])
+  @@index([customerId])
+  @@map("subscriptions")
 }
 
 /// Belongs to exactly one user OR one admin (CHECK constraint in the migration).

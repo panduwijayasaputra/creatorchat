@@ -8,7 +8,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { TELEGRAM_SEEN_FLAG, type UserProfile } from '@creatorchat/contracts';
+import {
+  TELEGRAM_SEEN_FLAG,
+  type TimezoneId,
+  type UpdateProfileRequest,
+  type UserProfile,
+} from '@creatorchat/contracts';
 import { browserTelegram, type TelegramEnv } from '../telegram/webapp';
 import { lossReasonFor, NetworkError, type MiniappApi } from './api-client';
 
@@ -28,6 +33,13 @@ export interface AuthContextValue {
   continueWithTelegram(): void;
   /** "Coba Lagi": reads initData again and retries the login. */
   retry(): void;
+  /**
+   * Saves the profile and puts the saved account into the in-memory session, so every screen shows
+   * it without a refetch. Failures (`ApiError`, `NetworkError`) are thrown to the caller.
+   */
+  updateProfile(input: UpdateProfileRequest): Promise<UserProfile>;
+  /** Creator only: saves the display timezone and puts the saved account into the session. */
+  updateTimezone(timezone: TimezoneId): Promise<UserProfile>;
 }
 
 /** A device hint that this person logged in before (never a token). Failures read as "no". */
@@ -132,9 +144,40 @@ export function AuthProvider({
     else void connect(initData);
   }, [telegram, connect]);
 
+  const updateProfile = useCallback(
+    async (input: UpdateProfileRequest) => {
+      // The endpoint follows the signed-in role; the server enforces it again.
+      const role = state.status === 'authenticated' ? state.user.role : 'USER';
+      const user =
+        role === 'CREATOR' ? await api.updateCreatorProfile(input) : await api.updateProfile(input);
+      setState((current) =>
+        current.status === 'authenticated' ? { status: 'authenticated', user } : current,
+      );
+      return user;
+    },
+    [api, state],
+  );
+
+  const updateTimezone = useCallback(
+    async (timezone: TimezoneId) => {
+      const user = await api.updateCreatorTimezone(timezone);
+      setState((current) =>
+        current.status === 'authenticated' ? { status: 'authenticated', user } : current,
+      );
+      return user;
+    },
+    [api],
+  );
+
   const value = useMemo(
-    () => ({ state, continueWithTelegram, retry: continueWithTelegram }),
-    [state, continueWithTelegram],
+    () => ({
+      state,
+      continueWithTelegram,
+      retry: continueWithTelegram,
+      updateProfile,
+      updateTimezone,
+    }),
+    [state, continueWithTelegram, updateProfile, updateTimezone],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

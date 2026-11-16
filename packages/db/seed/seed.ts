@@ -33,6 +33,7 @@ async function main(): Promise<void> {
     console.log(
       `Fixture users: ${result.usersCreated} created, ${result.usersExisting} already existed.`,
     );
+    console.log(`Fixture subscriptions created: ${result.subscriptionsCreated}.`);
     if (!result.adminCreated) {
       console.log(`Admin "${result.adminUsername}" already exists; password unchanged.`);
     } else if (result.generatedPassword) {

@@ -92,4 +92,19 @@ describe('seed', () => {
     expect(maya.sessionVersion).toBe(5);
     expect(maya.displayName).toBe('Edited');
   });
+
+  it('gives Raka Putra one active subscription to Salsa, once', async () => {
+    const first = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(first.subscriptionsCreated).toBe(1);
+    const second = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(second.subscriptionsCreated).toBe(0);
+    const rows = await prisma.subscription.findMany({
+      include: { customer: true, creator: { include: { user: true } } },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.customer.displayName).toBe('Raka Putra');
+    expect(rows[0]?.creator.user.displayName).toBe('Salsa');
+    expect(rows[0]?.endsAt.toISOString()).toBe('2026-11-27T00:00:00.000Z');
+    expect(rows[0]?.revokedAt).toBeNull();
+  });
 });

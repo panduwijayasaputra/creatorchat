@@ -73,7 +73,15 @@ export function createTestPrisma(): PrismaClient {
   return createPrismaClient(requireTestUrl());
 }
 
-const APP_TABLES = ['sessions', 'creators', 'users', 'admin_accounts', 'audit_logs'] as const;
+const APP_TABLES = [
+  'sessions',
+  'creator_applications',
+  'subscriptions',
+  'creators',
+  'users',
+  'admin_accounts',
+  'audit_logs',
+] as const;
 
 /**
  * Empties every application table. Re-checks that the connected database is a `_test` database

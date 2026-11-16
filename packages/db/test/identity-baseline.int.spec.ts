@@ -153,7 +153,7 @@ describe('identity baseline: audit log', () => {
 });
 
 describe('identity baseline: scope', () => {
-  it('creates only the identity tables plus creators (US-005) and the Prisma migrations table', async () => {
+  it('creates only the identity tables plus creators (US-005), creator requests and subscriptions (US-010) and the Prisma migrations table', async () => {
     const rows = await prisma.$queryRaw<{ table_name: string }[]>`
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -162,8 +162,10 @@ describe('identity baseline: scope', () => {
       '_prisma_migrations',
       'admin_accounts',
       'audit_logs',
+      'creator_applications',
       'creators',
       'sessions',
+      'subscriptions',
       'users',
     ]);
   });

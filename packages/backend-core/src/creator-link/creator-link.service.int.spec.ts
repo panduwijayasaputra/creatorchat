@@ -35,7 +35,7 @@ afterAll(async () => {
 });
 
 describe('CreatorLinkService.resolve', () => {
-  it('resolves an active creator with only the three public fields', async () => {
+  it('resolves an active creator with only the public fields', async () => {
     await makeCreator('k4m5x2qa');
     const result = await service.resolve({ code: 'k4m5x2qa' });
     expect(result).toEqual({
@@ -43,6 +43,7 @@ describe('CreatorLinkService.resolve', () => {
       creator: {
         publicCode: 'k4m5x2qa',
         displayName: 'Salsa',
+        bio: null,
         avatarUrl: 'https://example.test/a.jpg',
       },
     });

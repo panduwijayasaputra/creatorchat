@@ -1,0 +1,85 @@
+/* Values from designs/.../html/AdmCreators.html, AdmCreatorsTablet.html and AdmCreatorsMobile.html. */
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.intro {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+.search {
+  width: 300px;
+  flex: none;
+}
+
+.filterButton {
+  flex: none;
+}
+
+.panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.disc {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.caption {
+  font-size: 12px;
+  line-height: 16px;
+  color: #7a4f0d;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* The board's table buttons: 13 px text and 10 px side padding. */
+.compact {
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+.nowrap {
+  white-space: nowrap;
+}

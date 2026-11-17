@@ -145,6 +145,373 @@
         "TASK-065",
         "TASK-066"
       ]
+    },
+    {
+      "id": "US-011",
+      "title": "Creator request status and resubmission",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-067",
+        "TASK-068",
+        "TASK-069",
+        "TASK-070"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Admin approves or rejects a creator request",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-071",
+        "TASK-072",
+        "TASK-073",
+        "TASK-074",
+        "TASK-075"
+      ]
+    },
+    {
+      "id": "US-013",
+      "title": "Bot sends the creator request result",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-076",
+        "TASK-077",
+        "TASK-078",
+        "TASK-079",
+        "TASK-080"
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "Admin creator list",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-081",
+        "TASK-082",
+        "TASK-083",
+        "TASK-084",
+        "TASK-085"
+      ]
+    },
+    {
+      "id": "US-017",
+      "title": "Admin user list",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-098",
+        "TASK-099",
+        "TASK-100",
+        "TASK-101"
+      ]
+    },
+    {
+      "id": "US-016",
+      "title": "Admin blocks and unblocks a creator",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-086",
+        "TASK-087",
+        "TASK-088",
+        "TASK-089",
+        "TASK-090"
+      ]
+    },
+    {
+      "id": "US-019",
+      "title": "Admin blocks and unblocks a user",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-108",
+        "TASK-109",
+        "TASK-110",
+        "TASK-111",
+        "TASK-112"
+      ]
+    },
+    {
+      "id": "US-015",
+      "title": "Admin creator detail (ringkasan and history)",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-091",
+        "TASK-092",
+        "TASK-093",
+        "TASK-094",
+        "TASK-095",
+        "TASK-096",
+        "TASK-097"
+      ]
+    },
+    {
+      "id": "US-018",
+      "title": "Admin user detail, creator requests and history",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-102",
+        "TASK-103",
+        "TASK-104",
+        "TASK-105",
+        "TASK-106",
+        "TASK-107"
+      ]
+    },
+    {
+      "id": "US-020",
+      "title": "Admin grants, extends and revokes access from user detail",
+      "completed": "2026-11-16",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-113",
+        "TASK-114",
+        "TASK-115",
+        "TASK-116",
+        "TASK-117",
+        "TASK-118",
+        "TASK-119"
+      ]
+    },
+    {
+      "id": "US-021",
+      "title": "Admin subscription detail and creator Subscriber tab",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-120",
+        "TASK-121",
+        "TASK-122",
+        "TASK-123",
+        "TASK-124",
+        "TASK-125",
+        "TASK-126"
+      ]
+    },
+    {
+      "id": "US-022",
+      "title": "Explore and creator profile by access state",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-127",
+        "TASK-128",
+        "TASK-129",
+        "TASK-130",
+        "TASK-131",
+        "TASK-132"
+      ]
+    },
+    {
+      "id": "US-023",
+      "title": "Customer requests trial or renewal access",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-133",
+        "TASK-134",
+        "TASK-135",
+        "TASK-136"
+      ]
+    },
+    {
+      "id": "US-024",
+      "title": "Admin reviews customer access requests",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-137",
+        "TASK-138",
+        "TASK-139",
+        "TASK-140",
+        "TASK-141",
+        "TASK-142"
+      ]
+    },
+    {
+      "id": "US-025",
+      "title": "Customer Langganan page",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-143",
+        "TASK-144",
+        "TASK-145",
+        "TASK-146"
+      ]
+    },
+    {
+      "id": "US-026",
+      "title": "Customer private chat: read history and send text",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-147",
+        "TASK-148",
+        "TASK-149",
+        "TASK-150",
+        "TASK-151",
+        "TASK-152",
+        "TASK-153"
+      ]
+    },
+    {
+      "id": "US-028",
+      "title": "Creator inbox",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-154",
+        "TASK-155",
+        "TASK-156",
+        "TASK-157",
+        "TASK-158",
+        "TASK-159",
+        "TASK-160"
+      ]
+    },
+    {
+      "id": "US-027",
+      "title": "Customer chat list",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-161",
+        "TASK-162",
+        "TASK-163",
+        "TASK-164",
+        "TASK-165",
+        "TASK-166"
+      ]
+    },
+    {
+      "id": "US-029",
+      "title": "Creator conversation, manual reply and customer detail",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-167",
+        "TASK-168",
+        "TASK-169",
+        "TASK-170",
+        "TASK-171",
+        "TASK-172",
+        "TASK-173"
+      ]
+    },
+    {
+      "id": "US-030",
+      "title": "Read receipts and unread counts",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-174",
+        "TASK-175",
+        "TASK-176",
+        "TASK-177",
+        "TASK-178"
+      ]
+    },
+    {
+      "id": "US-031",
+      "title": "Realtime updates and reconnect",
+      "completed": "2026-11-17",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-179",
+        "TASK-180",
+        "TASK-181",
+        "TASK-182",
+        "TASK-183",
+        "TASK-184",
+        "TASK-185",
+        "TASK-186"
+      ]
+    },
+    {
+      "id": "US-032",
+      "title": "Creator gallery: upload photos and videos",
+      "completed": "2026-11-18",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-187",
+        "TASK-188",
+        "TASK-189",
+        "TASK-190",
+        "TASK-191",
+        "TASK-192",
+        "TASK-193",
+        "TASK-194",
+        "TASK-195"
+      ]
+    },
+    {
+      "id": "US-033",
+      "title": "Creator gallery viewer",
+      "completed": "2026-11-18",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-196",
+        "TASK-197",
+        "TASK-198"
+      ]
+    },
+    {
+      "id": "US-034",
+      "title": "Subscriber gallery on the creator profile",
+      "completed": "2026-11-18",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-199",
+        "TASK-200",
+        "TASK-201",
+        "TASK-202"
+      ]
+    },
+    {
+      "id": "US-035",
+      "title": "Admin creator Galeri tab and media detail",
+      "completed": "2026-11-18",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-203",
+        "TASK-204",
+        "TASK-205",
+        "TASK-206"
+      ]
+    },
+    {
+      "id": "US-036",
+      "title": "Creator sends a photo or video in chat",
+      "completed": "2026-11-18",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-207",
+        "TASK-208",
+        "TASK-209",
+        "TASK-210",
+        "TASK-211",
+        "TASK-212",
+        "TASK-213"
+      ]
+    },
+    {
+      "id": "US-037",
+      "title": "Customer receives and opens chat media",
+      "completed": "2026-11-18",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-214",
+        "TASK-215",
+        "TASK-216",
+        "TASK-217"
+      ]
     }
   ]
 }

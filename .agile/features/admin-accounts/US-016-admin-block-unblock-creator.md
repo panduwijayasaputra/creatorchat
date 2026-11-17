@@ -1,6 +1,6 @@
 # US-016: Admin blocks and unblocks a creator
 
-**Status:** backlog
+**Status:** ready_for_uat
 **Priority:** high
 **Feature:** admin-accounts
 **Phase:** B
@@ -19,3 +19,20 @@ As an Admin, I want to block a creator who breaks the rules and unblock them lat
 - [ ] **Unblock** opens `AdmDlgUnblock`; confirming restores creator and account to ACTIVE, audits it, and the list shows `AdmCreatorsToastUnblock`. Unblock does not re-grant or extend any subscription.
 - [ ] The reason is required by the server (empty → 400, dialog keeps the inline error). Blocking an already blocked creator or unblocking an active one returns a conflict and changes nothing; double submit acts once. Buttons are disabled in flight.
 - [ ] Admin-only (cookie + CSRF). Integration tests: block revokes the creator's live session, deep link becomes 404, audit row written with reason; unblock reverses status only. Screenshots at 1440 px match the dialog and result boards.
+
+## Tasks
+
+### TASK-086: Contracts for creator moderation
+**Status:** done
+
+### TASK-087: CreatorModerationService (backend-core)
+**Status:** done
+
+### TASK-088: Admin endpoints
+**Status:** done
+
+### TASK-089: Admin API client + Block / Unblock dialogs
+**Status:** done
+
+### TASK-090: Wire the list + visual check
+**Status:** done

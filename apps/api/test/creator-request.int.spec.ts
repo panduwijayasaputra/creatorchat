@@ -367,4 +367,101 @@ describe('GET /v1/me/creator-request', () => {
     await security.blockUser(blocked.userId);
     expect((await read(blocked.token)).statusCode).toBe(401);
   });
+
+  const application = (userId: string, over: Record<string, unknown> = {}) =>
+    prisma.creatorApplication.create({
+      data: {
+        userId,
+        creatorName: 'Luna Aurora',
+        instagramUrl: 'https://instagram.com/luna.aurora',
+        creatorType: 'AI_CHARACTER',
+        description: 'Karakter AI penjelajah malam.',
+        ...over,
+      } as never,
+    });
+
+  it('returns a rejected request with its reason and review time', async () => {
+    const { token, userId } = await customerSignIn();
+    const reviewedAt = new Date('2026-11-15T00:00:00.000Z');
+    await application(userId, {
+      status: 'REJECTED',
+      reviewedAt,
+      reviewReason: 'Link Instagram belum bisa kami verifikasi.',
+    });
+    const state = CreatorRequestStateResponseSchema.parse((await read(token)).json());
+    expect(state.request).toMatchObject({
+      status: 'REJECTED',
+      creator_name: 'Luna Aurora',
+      creator_type: 'AI_CHARACTER',
+      review_reason: 'Link Instagram belum bisa kami verifikasi.',
+      reviewed_at: reviewedAt.toISOString(),
+    });
+  });
+
+  it('returns a pending request with the submitted, normalised values and no review data', async () => {
+    const { token } = await customerSignIn();
+    await submit(valid, token);
+    const state = CreatorRequestStateResponseSchema.parse((await read(token)).json());
+    expect(state.request).toMatchObject({
+      status: 'PENDING',
+      creator_name: 'Maya Lestari',
+      instagram_url: 'https://instagram.com/maya.lestari',
+      creator_type: 'HUMAN',
+      reviewed_at: null,
+      review_reason: null,
+    });
+  });
+
+  it('returns only the newest request; the older rejected one never appears', async () => {
+    const { token, userId } = await customerSignIn();
+    await application(userId, {
+      status: 'REJECTED',
+      reviewedAt: new Date(),
+      reviewReason: 'ALASAN-LAMA-RAHASIA',
+      creatorName: 'Nama Lama',
+      createdAt: new Date(Date.now() - DAY),
+    });
+    await submit(valid, token);
+    const res = await read(token);
+    const state = CreatorRequestStateResponseSchema.parse(res.json());
+    expect(state.request?.status).toBe('PENDING');
+    expect(state.request?.creator_name).toBe('Maya Lestari');
+    expect(res.body).not.toContain('ALASAN-LAMA-RAHASIA');
+    expect(res.body).not.toContain('Nama Lama');
+  });
+
+  it('exposes no user id and no reviewing admin id', async () => {
+    const { token, userId } = await customerSignIn();
+    await application(userId, {
+      status: 'REJECTED',
+      reviewedAt: new Date(),
+      reviewReason: 'x',
+    });
+    const res = await read(token);
+    const request = (res.json() as { request: Record<string, unknown> }).request;
+    expect(Object.keys(request).sort()).toEqual([
+      'created_at',
+      'creator_name',
+      'creator_type',
+      'description',
+      'id',
+      'instagram_url',
+      'review_reason',
+      'reviewed_at',
+      'status',
+    ]);
+    expect(res.body).not.toContain(userId);
+  });
+
+  it('answers 401 to a submit once the account was approved meanwhile, writing nothing', async () => {
+    const { token, userId } = await customerSignIn();
+    await application(userId, {
+      status: 'REJECTED',
+      reviewedAt: new Date(),
+      reviewReason: 'x',
+    });
+    await security.changeRole(userId, 'CREATOR');
+    expect((await submit(valid, token)).statusCode).toBe(401);
+    expect(await rows(userId)).toBe(1);
+  });
 });

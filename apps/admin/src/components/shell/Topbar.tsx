@@ -1,6 +1,7 @@
 import { Button, ChevronDownIcon, DotsIcon, XIcon } from '@creatorchat/ui';
 import { Fragment } from 'react';
 import { Link, useMatches } from 'react-router';
+import { usePageCrumbsOverride } from './page-crumbs';
 import { initialsOf, isRouteHandle, type AdminIdentity } from './route-handle';
 import styles from './shell.module.css';
 
@@ -15,7 +16,9 @@ interface TopbarProps {
 /** 84 px topbar: breadcrumb + page title, admin identity and Logout. */
 export function Topbar({ admin, menuOpen, menuId, onToggleMenu, onLogout }: TopbarProps) {
   const handle = [...useMatches()].reverse().find((m) => isRouteHandle(m.handle))?.handle;
-  const route = isRouteHandle(handle) ? handle : { title: 'Halaman', breadcrumb: [] };
+  const base = isRouteHandle(handle) ? handle : { title: 'Halaman', breadcrumb: [] };
+  const override = usePageCrumbsOverride();
+  const route = override ? { ...base, breadcrumb: override } : base;
 
   return (
     <header className={styles.topbar}>

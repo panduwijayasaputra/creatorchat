@@ -1,6 +1,6 @@
 import { AccountSecurityService, buildSignedInitData, loadEnv } from '@creatorchat/backend-core';
 import {
-  CreatorLinkResponseSchema,
+  CreatorProfileResponseSchema,
   CreatorSettingsResponseSchema,
   ErrorResponseSchema,
   TelegramLoginResponseSchema,
@@ -168,7 +168,7 @@ describe('PATCH /v1/creator/profile', () => {
     });
     const customer = await customerSignIn();
     const pub = await authed('GET', `/v1/creators/by-code/${code}`, customer.token);
-    expect(CreatorLinkResponseSchema.parse(pub.json())).toMatchObject({
+    expect(CreatorProfileResponseSchema.parse(pub.json())).toMatchObject({
       display_name: 'Salsa M',
       bio: 'Suka masak',
     });

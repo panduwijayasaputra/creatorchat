@@ -5,6 +5,7 @@ import {
   CreatorRequestBlockSchema,
   SubmitCreatorRequestSchema,
   codePointLength,
+  type CreatorApplication,
   type CreatorRequestBlock,
   type CreatorRequestStateResponse,
   type CreatorType,
@@ -63,17 +64,22 @@ function serverFieldErrors(details: unknown): FieldErrors | null {
 
 interface FormProps {
   api: Api;
+  /** The rejected request being fixed (`CreatorRequestRetry`), or null for a first request. */
+  rejected: CreatorApplication | null;
   blocked: CreatorRequestBlock | null;
   onBlocked: (block: CreatorRequestBlock) => void;
 }
 
-function RequestForm({ api, blocked, onBlocked }: FormProps) {
+function RequestForm({ api, rejected, blocked, onBlocked }: FormProps) {
   const { state } = useAuth();
   const navigate = useNavigate();
-  const [name, setName] = useState(state.status === 'authenticated' ? state.user.display_name : '');
-  const [url, setUrl] = useState('');
-  const [type, setType] = useState<CreatorType>('HUMAN');
-  const [description, setDescription] = useState('');
+  // Retry: the rejected request's values come back; the rights statement is confirmed again.
+  const [name, setName] = useState(
+    rejected?.creator_name ?? (state.status === 'authenticated' ? state.user.display_name : ''),
+  );
+  const [url, setUrl] = useState(rejected?.instagram_url ?? '');
+  const [type, setType] = useState<CreatorType>(rejected?.creator_type ?? 'HUMAN');
+  const [description, setDescription] = useState(rejected?.description ?? '');
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [checked, setChecked] = useState(false);
@@ -188,6 +194,14 @@ function RequestForm({ api, blocked, onBlocked }: FormProps) {
 
       <div className={styles.scroll}>
         <div className={styles.body}>
+          {rejected ? (
+            // The reason is admin text: a plain text node, never HTML.
+            <div className={styles.note}>
+              <InfoCircleIcon size={18} strokeWidth={2} />
+              <span>Alasan penolakan sebelumnya: {rejected.review_reason}</span>
+            </div>
+          ) : null}
+
           {blocked ? (
             <div role="status" className={`${styles.banner} ${styles.bannerBlocked}`}>
               <span className={`${styles.bannerDisc} ${styles.discBlocked}`}>
@@ -445,7 +459,8 @@ type Load =
 /**
  * `CreatorRequest` + `RequestStates` + `CreatorRequestBlocked` (USER only, no bottom navigation).
  * The request and subscription state comes from the server; a pending request sends the user to the
- * status screen (US-011), and the server re-checks the block on every submit.
+ * status screen, a rejected one shows the retry variant (`CreatorRequestRetry`: prefilled, with the
+ * reason on top) and the server re-checks the block on every submit.
  */
 export function CreatorRequestPage({ api }: { api: Api }) {
   const [load, setLoad] = useState<Load>({ status: 'loading' });
@@ -467,7 +482,15 @@ export function CreatorRequestPage({ api }: { api: Api }) {
     if (load.state.request?.status === 'PENDING') {
       return <Navigate to={REQUEST_STATUS_PATH} replace />;
     }
-    return <RequestForm api={api} blocked={blocked} onBlocked={setBlocked} />;
+    const latest = load.state.request;
+    return (
+      <RequestForm
+        api={api}
+        rejected={latest?.status === 'REJECTED' ? latest : null}
+        blocked={blocked}
+        onBlocked={setBlocked}
+      />
+    );
   }
 
   return (

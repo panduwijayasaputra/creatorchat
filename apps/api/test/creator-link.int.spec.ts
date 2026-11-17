@@ -1,6 +1,6 @@
 import { buildSignedInitData, loadEnv, signAccessToken } from '@creatorchat/backend-core';
 import {
-  CreatorLinkResponseSchema,
+  CreatorProfileResponseSchema,
   ErrorResponseSchema,
   TelegramLoginResponseSchema,
 } from '@creatorchat/contracts';
@@ -102,7 +102,7 @@ const byCode = (code: string, token?: string) =>
   });
 
 describe('GET /v1/creators/by-code/:publicCode', () => {
-  it('returns exactly public_code, display_name, bio and avatar_url to a signed-in USER and writes nothing', async () => {
+  it('returns exactly public_code, display_name, bio, avatar_url and access to a signed-in USER and writes nothing', async () => {
     await makeCreator('k4m5x2qa');
     const { token } = await signIn();
     const before = [
@@ -113,15 +113,19 @@ describe('GET /v1/creators/by-code/:publicCode', () => {
     const res = await byCode('k4m5x2qa', token);
     expect(res.statusCode).toBe(200);
     expect(res.headers['cache-control']).toBe('no-store');
-    expect(CreatorLinkResponseSchema.parse(res.json())).toEqual({
+    expect(CreatorProfileResponseSchema.parse(res.json())).toEqual({
       public_code: 'k4m5x2qa',
       display_name: 'Salsa',
       bio: null,
       avatar_url: 'https://example.test/s.jpg',
+      conversation_id: null,
+      access: { state: 'GUEST' },
     });
     expect(Object.keys(res.json()).sort()).toEqual([
+      'access',
       'avatar_url',
       'bio',
+      'conversation_id',
       'display_name',
       'public_code',
     ]);

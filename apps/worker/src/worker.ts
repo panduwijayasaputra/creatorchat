@@ -32,7 +32,7 @@ async function probe(fn: () => Promise<unknown>): Promise<State> {
 
 /**
  * Worker shell: logs which integrations are unconfigured, watches DB/Redis reachability (logging
- * only on state changes) and shuts down cleanly. Queue processors arrive with their stories.
+ * only on state changes) and shuts down cleanly. Queue processors are wired in `notifications.ts`.
  */
 export function createWorker(deps: WorkerDeps): Worker {
   const { logger } = deps;
@@ -57,7 +57,7 @@ export function createWorker(deps: WorkerDeps): Worker {
       logger.info({ integrations: getIntegrationStatus(deps.env) }, 'integration status');
       await check();
       timer = setInterval(() => void check(), intervalMs);
-      logger.info('worker ready (no queues registered yet)');
+      logger.info('worker ready');
     },
     async stop() {
       stopped = true;

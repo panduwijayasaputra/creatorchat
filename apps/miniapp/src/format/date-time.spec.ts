@@ -38,3 +38,14 @@ describe('formatDateTime', () => {
     expect(formatDateTime('not a date', 'Asia/Jakarta')).toBe('-');
   });
 });
+
+describe('zoneLabel', () => {
+  it('names the Indonesian zones and falls back for others and unknown zones', async () => {
+    const { zoneLabel } = await import('./date-time');
+    expect(zoneLabel('Asia/Jakarta')).toBe('WIB');
+    expect(zoneLabel('Asia/Makassar')).toBe('WITA');
+    expect(zoneLabel('Asia/Jayapura')).toBe('WIT');
+    expect(zoneLabel('Australia/Sydney')).toMatch(/GMT\+1[01]/);
+    expect(zoneLabel('Nowhere/Land')).toBe('WIB');
+  });
+});

@@ -1,9 +1,66 @@
 import {
+  CREATOR_GALLERY_PATH,
+  CREATOR_MEDIA_LIMITS_PATH,
+  CREATOR_MEDIA_UPLOADS_PATH,
+  CreatorGalleryResponseSchema,
+  MediaAssetResponseSchema,
+  MediaLimitsSchema,
+  MediaUploadInitResponseSchema,
+  ChatMediaDetailSchema,
+  chatMediaItemPath,
+  CreatorGalleryItemDetailSchema,
+  creatorGalleryItemPath,
+  creatorMediaCompletePath,
+  CustomerGalleryItemDetailSchema,
+  CustomerGalleryResponseSchema,
+  customerGalleryItemPath,
+  customerGalleryPath,
+  creatorMediaPath,
+  CREATOR_INBOX_PATH,
+  CREATOR_UNREAD_PATH,
+  CreatorUnreadResponseSchema,
+  ReadResponseSchema,
+  chatReadPath,
+  creatorReadPath,
+  type CreatorUnreadResponse,
+  type ReadResponse,
+  InboxResponseSchema,
+  type InboxFilter,
+  type InboxResponse,
   CREATOR_REQUEST_PATH,
-  CreatorLinkResponseSchema,
+  ChatHistoryResponseSchema,
+  CreatorChatHistoryResponseSchema,
+  CreatorCustomerDetailResponseSchema,
+  CreatorSendMessageResponseSchema,
+  creatorChatMessagesPath,
+  creatorCustomerPath,
+  type CreatorChatHistoryResponse,
+  type CreatorCustomerDetailResponse,
+  type CreatorSendMessageBody,
+  type CreatorSendMessageResponse,
+  SendMessageResponseSchema,
+  chatMessagesPath,
+  type ChatHistoryResponse,
+  type SendMessageBody,
+  type SendMessageResponse,
+  CreatorProfileResponseSchema,
+  EXPLORE_PATH,
+  ExploreResponseSchema,
   CreatorRequestStateResponseSchema,
   SubmitCreatorRequestResponseSchema,
+  accessRequestPath,
   creatorByCodePath,
+  SubmitAccessRequestResponseSchema,
+  SUBSCRIPTIONS_PATH,
+  CHAT_LIST_PATH,
+  CHAT_UNREAD_PATH,
+  ChatListResponseSchema,
+  ChatUnreadResponseSchema,
+  type ChatListQuery,
+  type ChatListResponse,
+  type ChatUnreadResponse,
+  SubscriptionsResponseSchema,
+  type SubscriptionsResponse,
   CREATOR_PROFILE_PATH,
   CREATOR_TIMEZONE_PATH,
   CREATOR_SETTINGS_PATH,
@@ -14,15 +71,27 @@ import {
   TelegramLoginResponseSchema,
   UpdateProfileResponseSchema,
   USER_AUTH_PATH,
-  type CreatorLinkResponse,
+  type CreatorProfileResponse,
+  type ExploreQuery,
+  type ExploreResponse,
   type CreatorRequestStateResponse,
   type CreatorSettingsResponse,
+  type SubmitAccessRequestResponse,
   type SubmitCreatorRequest,
   type SubmitCreatorRequestResponse,
   type ErrorCode,
   type TimezoneId,
   type UpdateProfileRequest,
   type UserProfile,
+  type ChatMediaDetail,
+  type CreatorGalleryItemDetail,
+  type CreatorGalleryResponse,
+  type CustomerGalleryItemDetail,
+  type CustomerGalleryResponse,
+  type MediaAssetResponse,
+  type MediaLimits,
+  type MediaUploadInitBody,
+  type MediaUploadInitResponse,
 } from '@creatorchat/contracts';
 
 /** The request never produced an HTTP response (offline, DNS, refused, CORS, aborted). */
@@ -54,8 +123,21 @@ export interface MiniappApi {
   loginWithTelegram(initData: string): Promise<UserProfile>;
   /** The current account as the server sees it (role and status come from here). */
   me(): Promise<UserProfile>;
-  /** Resolves a creator deep-link code. 404 CREATOR_NOT_FOUND / 403 FORBIDDEN_ROLE arrive as ApiError. */
-  resolveCreator(publicCode: string): Promise<CreatorLinkResponse>;
+  /** Resolves a creator code to the profile and the viewer's access state. 404 CREATOR_NOT_FOUND / 403 FORBIDDEN_ROLE arrive as ApiError. */
+  resolveCreator(publicCode: string): Promise<CreatorProfileResponse>;
+  /** USER only: asks for trial / renewal access to this creator (idempotent while pending). 409 ACCESS_ALREADY_ACTIVE / 404 CREATOR_NOT_FOUND arrive as ApiError. */
+  requestAccess(publicCode: string): Promise<SubmitAccessRequestResponse>;
+  /** USER only: my conversations, newest activity first, one page by keyset cursor. */
+  listChats(query: {
+    cursor?: string | undefined;
+    limit: ChatListQuery['limit'];
+  }): Promise<ChatListResponse>;
+  /** USER only: my total unread count (the bottom-nav badge). */
+  getChatUnread(): Promise<ChatUnreadResponse>;
+  /** USER only: the customer's own creators for Langganan, ordered by the server. */
+  listSubscriptions(): Promise<SubscriptionsResponse>;
+  /** USER only: the creators to explore, one page, each with the viewer's own access chip. */
+  listCreators(query: ExploreQuery): Promise<ExploreResponse>;
   /** Saves the caller's own profile (full desired values); returns the account as saved. */
   updateProfile(input: UpdateProfileRequest): Promise<UserProfile>;
   /** Creator only: own profile, public code and the bio link (403 for anyone else). */
@@ -68,6 +150,62 @@ export interface MiniappApi {
   getCreatorRequestState(): Promise<CreatorRequestStateResponse>;
   /** USER only: submits the request (idempotent while one is pending). 409 CREATOR_REQUEST_BLOCKED arrives as ApiError. */
   submitCreatorRequest(input: SubmitCreatorRequest): Promise<SubmitCreatorRequestResponse>;
+  /** USER only: one page of the chat history, newest first. 404 NOT_FOUND arrives as ApiError. */
+  getChatHistory(
+    conversationId: string,
+    query?: { before?: number; limit?: number },
+  ): Promise<ChatHistoryResponse>;
+  /** USER only: sends text; the same `client_message_id` returns the same message. 403 CHAT_ACCESS_EXPIRED / CHAT_CREATOR_BLOCKED, 409 IDEMPOTENCY_CONFLICT arrive as ApiError. */
+  sendChatMessage(conversationId: string, input: SendMessageBody): Promise<SendMessageResponse>;
+  /** CREATOR only: one page of a conversation of mine, newest first. 404 NOT_FOUND arrives as ApiError. */
+  getCreatorChatHistory(
+    conversationId: string,
+    query?: { before?: number; limit?: number },
+  ): Promise<CreatorChatHistoryResponse>;
+  /** CREATOR only: sends text; the same `client_message_id` returns the same message. 403 CHAT_ACCESS_EXPIRED, 409 IDEMPOTENCY_CONFLICT arrive as ApiError. */
+  sendCreatorChatMessage(
+    conversationId: string,
+    input: CreatorSendMessageBody,
+  ): Promise<CreatorSendMessageResponse>;
+  /** CREATOR only: the customer of one of my conversations and their access. 404 NOT_FOUND arrives as ApiError. */
+  getCreatorCustomer(conversationId: string): Promise<CreatorCustomerDetailResponse>;
+  /** CREATOR only: one page of the inbox (newest activity first). 403 FORBIDDEN_ROLE arrives as ApiError. */
+  getCreatorInbox(query: {
+    filter: InboxFilter;
+    cursor?: string | null;
+    limit?: number;
+  }): Promise<InboxResponse>;
+  /** CREATOR only: upload limits (bytes, seconds). */
+  getMediaLimits(): Promise<MediaLimits>;
+  /** CREATOR only: starts an upload; the same `client_upload_id` returns the same asset with a fresh link. 400 MEDIA_TYPE_NOT_ALLOWED / MEDIA_TOO_LARGE, 429 MEDIA_RATE_LIMITED arrive as ApiError. */
+  initMediaUpload(body: MediaUploadInitBody): Promise<MediaUploadInitResponse>;
+  /** CREATOR only: tells the server the file was uploaded. 409 MEDIA_UPLOAD_INCOMPLETE means upload it again. */
+  completeMediaUpload(assetId: string): Promise<MediaAssetResponse>;
+  /** CREATOR only: one of my assets (poll while it is processed). 404 MEDIA_NOT_FOUND arrives as ApiError. */
+  getMedia(assetId: string): Promise<MediaAssetResponse>;
+  /** CREATOR only: my gallery, newest first. */
+  getGallery(query?: { cursor?: string | null; limit?: number }): Promise<CreatorGalleryResponse>;
+  /** CREATOR only: one gallery item for the viewer (5-minute file link, position, neighbours). 404 MEDIA_NOT_FOUND arrives as ApiError. */
+  getGalleryItem(assetId: string): Promise<CreatorGalleryItemDetail>;
+  /** USER only: a creator's gallery, only with active access. 403 GALLERY_ACCESS_REQUIRED, 404 CREATOR_NOT_FOUND arrive as ApiError. */
+  getCustomerGallery(
+    publicCode: string,
+    query?: { cursor?: string | null; limit?: number },
+  ): Promise<CustomerGalleryResponse>;
+  /** USER only: one item for the viewer. 403 GALLERY_ACCESS_REQUIRED, 404 MEDIA_NOT_FOUND arrive as ApiError. */
+  getCustomerGalleryItem(publicCode: string, assetId: string): Promise<CustomerGalleryItemDetail>;
+  /** USER only: one file of my conversation with a 5-minute link, its place and neighbours. Opens after the access ended too. 404 NOT_FOUND arrives as ApiError. */
+  getChatMediaItem(conversationId: string, attachmentId: string): Promise<ChatMediaDetail>;
+  /** USER only: moves my read cursor in a chat up to `throughSeq` (never down). 404 NOT_FOUND arrives as ApiError. */
+  markChatRead(conversationId: string, throughSeq: number): Promise<ReadResponse>;
+  /** CREATOR only: moves my read cursor in one of my conversations up to `throughSeq`. */
+  markCreatorRead(conversationId: string, throughSeq: number): Promise<ReadResponse>;
+  /** CREATOR only: conversations with unread customer messages (the Inbox tab badge). */
+  getCreatorUnread(): Promise<CreatorUnreadResponse>;
+  /** The in-memory access token (null before login); the realtime socket reads it at every connect. */
+  getAccessToken(): string | null;
+  /** Re-exchanges Telegram's data for a fresh token. Null when the session is lost (listeners are told); a NetworkError is thrown when offline. */
+  renewAccessToken(): Promise<string | null>;
   /** Called when the session could not be renewed. Returns an unsubscribe function. */
   onSessionLost(listener: (reason: SessionLossReason) => void): () => void;
   /** Called after a silent re-exchange succeeded, with the account as the server now sees it (the role may have changed). */
@@ -188,12 +326,58 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
 
   return {
     loginWithTelegram: exchange,
+    getAccessToken: () => token,
+    async renewAccessToken() {
+      return (await renew()) ? token : null;
+    },
     async me() {
       return MeResponseSchema.parse(await (await authorized('GET', '/v1/me')).json());
     },
     async resolveCreator(publicCode) {
       const response = await authorized('GET', creatorByCodePath(publicCode));
-      return CreatorLinkResponseSchema.parse(await response.json());
+      return CreatorProfileResponseSchema.parse(await response.json());
+    },
+    async requestAccess(publicCode) {
+      const response = await authorized('POST', accessRequestPath(publicCode));
+      return SubmitAccessRequestResponseSchema.parse(await response.json());
+    },
+    async listChats(query) {
+      const params = new URLSearchParams({ limit: String(query.limit) });
+      if (query.cursor) params.set('cursor', query.cursor);
+      const response = await authorized('GET', `${CHAT_LIST_PATH}?${params.toString()}`);
+      return ChatListResponseSchema.parse(await response.json());
+    },
+    async markChatRead(conversationId, throughSeq) {
+      const response = await authorized('POST', chatReadPath(conversationId), {
+        through_seq: throughSeq,
+      });
+      return ReadResponseSchema.parse(await response.json());
+    },
+    async markCreatorRead(conversationId, throughSeq) {
+      const response = await authorized('POST', creatorReadPath(conversationId), {
+        through_seq: throughSeq,
+      });
+      return ReadResponseSchema.parse(await response.json());
+    },
+    async getCreatorUnread() {
+      const response = await authorized('GET', CREATOR_UNREAD_PATH);
+      return CreatorUnreadResponseSchema.parse(await response.json());
+    },
+    async getChatUnread() {
+      const response = await authorized('GET', CHAT_UNREAD_PATH);
+      return ChatUnreadResponseSchema.parse(await response.json());
+    },
+    async listSubscriptions() {
+      const response = await authorized('GET', SUBSCRIPTIONS_PATH);
+      return SubscriptionsResponseSchema.parse(await response.json());
+    },
+    async listCreators(query) {
+      const params = new URLSearchParams({
+        page: String(query.page),
+        page_size: String(query.page_size),
+      });
+      const response = await authorized('GET', `${EXPLORE_PATH}?${params.toString()}`);
+      return ExploreResponseSchema.parse(await response.json());
     },
     async updateProfile(input) {
       const response = await authorized('PATCH', PROFILE_PATH, input);
@@ -218,6 +402,88 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
     async submitCreatorRequest(input) {
       const response = await authorized('POST', CREATOR_REQUEST_PATH, input);
       return SubmitCreatorRequestResponseSchema.parse(await response.json());
+    },
+    async getChatHistory(conversationId, query = {}) {
+      const params = new URLSearchParams();
+      if (query.before !== undefined) params.set('before', String(query.before));
+      if (query.limit !== undefined) params.set('limit', String(query.limit));
+      const qs = params.size > 0 ? `?${params.toString()}` : '';
+      const response = await authorized('GET', `${chatMessagesPath(conversationId)}${qs}`);
+      return ChatHistoryResponseSchema.parse(await response.json());
+    },
+    async sendChatMessage(conversationId, input) {
+      const response = await authorized('POST', chatMessagesPath(conversationId), input);
+      return SendMessageResponseSchema.parse(await response.json());
+    },
+    async getCreatorChatHistory(conversationId, query = {}) {
+      const params = new URLSearchParams();
+      if (query.before !== undefined) params.set('before', String(query.before));
+      if (query.limit !== undefined) params.set('limit', String(query.limit));
+      const qs = params.size > 0 ? `?${params.toString()}` : '';
+      const response = await authorized('GET', `${creatorChatMessagesPath(conversationId)}${qs}`);
+      return CreatorChatHistoryResponseSchema.parse(await response.json());
+    },
+    async sendCreatorChatMessage(conversationId, input) {
+      const response = await authorized('POST', creatorChatMessagesPath(conversationId), input);
+      return CreatorSendMessageResponseSchema.parse(await response.json());
+    },
+    async getCreatorCustomer(conversationId) {
+      const response = await authorized('GET', creatorCustomerPath(conversationId));
+      return CreatorCustomerDetailResponseSchema.parse(await response.json());
+    },
+    async getMediaLimits() {
+      const response = await authorized('GET', CREATOR_MEDIA_LIMITS_PATH);
+      return MediaLimitsSchema.parse(await response.json());
+    },
+    async initMediaUpload(body) {
+      const response = await authorized('POST', CREATOR_MEDIA_UPLOADS_PATH, body);
+      return MediaUploadInitResponseSchema.parse(await response.json());
+    },
+    async completeMediaUpload(assetId) {
+      const response = await authorized('POST', creatorMediaCompletePath(assetId));
+      return MediaAssetResponseSchema.parse(await response.json());
+    },
+    async getMedia(assetId) {
+      const response = await authorized('GET', creatorMediaPath(assetId));
+      return MediaAssetResponseSchema.parse(await response.json());
+    },
+    async getGallery(query = {}) {
+      const params = new URLSearchParams();
+      if (query.cursor) params.set('cursor', query.cursor);
+      if (query.limit !== undefined) params.set('limit', String(query.limit));
+      const qs = params.toString();
+      const response = await authorized('GET', `${CREATOR_GALLERY_PATH}${qs ? `?${qs}` : ''}`);
+      return CreatorGalleryResponseSchema.parse(await response.json());
+    },
+    async getGalleryItem(assetId) {
+      const response = await authorized('GET', creatorGalleryItemPath(assetId));
+      return CreatorGalleryItemDetailSchema.parse(await response.json());
+    },
+    async getCustomerGallery(publicCode, query = {}) {
+      const params = new URLSearchParams();
+      if (query.cursor) params.set('cursor', query.cursor);
+      if (query.limit !== undefined) params.set('limit', String(query.limit));
+      const qs = params.toString();
+      const response = await authorized(
+        'GET',
+        `${customerGalleryPath(publicCode)}${qs ? `?${qs}` : ''}`,
+      );
+      return CustomerGalleryResponseSchema.parse(await response.json());
+    },
+    async getCustomerGalleryItem(publicCode, assetId) {
+      const response = await authorized('GET', customerGalleryItemPath(publicCode, assetId));
+      return CustomerGalleryItemDetailSchema.parse(await response.json());
+    },
+    async getChatMediaItem(conversationId, attachmentId) {
+      const response = await authorized('GET', chatMediaItemPath(conversationId, attachmentId));
+      return ChatMediaDetailSchema.parse(await response.json());
+    },
+    async getCreatorInbox(query) {
+      const params = new URLSearchParams({ filter: query.filter });
+      if (query.cursor) params.set('cursor', query.cursor);
+      if (query.limit !== undefined) params.set('limit', String(query.limit));
+      const response = await authorized('GET', `${CREATOR_INBOX_PATH}?${params.toString()}`);
+      return InboxResponseSchema.parse(await response.json());
     },
     onSessionRenewed(listener) {
       renewedListeners.add(listener);

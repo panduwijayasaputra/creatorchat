@@ -1,0 +1,21 @@
+/* Pending access request chip of the /users row (US-024). DESIGN GAP: no board; warn tone of the status chips. */
+.accessChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warn-bg, #fbedd0);
+  color: var(--warn-fg, #7a5300);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The extra Akses filter (US-024) is one control wider than the board: Reset Filter wraps to its own row at 1440 px; a narrower search would cut the board placeholder. */
+.search {
+  width: 252px;
+  flex: none;
+}

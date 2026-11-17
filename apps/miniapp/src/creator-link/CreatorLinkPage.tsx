@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import type { CreatorLinkResponse } from '@creatorchat/contracts';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Outlet, useNavigate, useParams } from 'react-router';
+import type { CreatorProfileResponse } from '@creatorchat/contracts';
 import { Button, ChevronLeftIcon, InfoCircleIcon, UserOffIcon } from '@creatorchat/ui';
 import { ApiError, type MiniappApi } from '../auth/api-client';
 import { useAuth } from '../auth/AuthProvider';
 import { ErrorScreen } from '../auth/screens/AuthGate';
-import { NotImplemented } from '../components/NotImplemented';
+import { BottomToast, useFlashMessage } from '../components/BottomToast';
+import { CustomerFrame } from '../components/shell/Shells';
+import { CreatorProfileView } from './CreatorProfileView';
+import { ProfileGallery } from './ProfileGallery';
+import { PROFILE_COPY } from './profile-copy';
 import styles from './creator-link.module.css';
 
 type Lookup =
   | { status: 'loading' }
-  | { status: 'found'; creator: CreatorLinkResponse }
+  | { status: 'found'; creator: CreatorProfileResponse }
   | { status: 'unavailable' }
   | { status: 'customers-only' }
   | { status: 'error' };
@@ -76,17 +80,21 @@ export function CustomersOnly({ onInbox }: { onInbox: () => void }) {
 }
 
 /**
- * Landing for `/creators/:publicCode`. The code only picks a destination: the server resolves it
- * after login and grants nothing. The creator profile itself is a later story, so a valid code
- * shows a neutral stub.
+ * Landing and profile for `/creators/:publicCode`. The code only picks a destination: the server
+ * resolves it after login and grants nothing; the answer carries the viewer's own access state, and
+ * the page shows exactly that one state (US-022).
  */
 export function CreatorLinkPage({ api }: { api: MiniappApi }) {
   const { publicCode = '' } = useParams();
   const navigate = useNavigate();
   const { state } = useAuth();
+  const [flash, showFlash] = useFlashMessage();
   const isCreator = state.status === 'authenticated' && state.user.role === 'CREATOR';
   const [lookup, setLookup] = useState<Lookup>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const [sending, setSending] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     // The server is the authority; for a CREATOR it would answer 403, so skip the request.
@@ -113,6 +121,46 @@ export function CreatorLinkPage({ api }: { api: MiniappApi }) {
     };
   }, [api, publicCode, isCreator, attempt]);
 
+  /** One request at a time; the server is idempotent, so a lost response can simply be retried. */
+  const requestAccess = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setSending(true);
+    setRequestError(null);
+    try {
+      try {
+        await api.requestAccess(publicCode);
+      } catch (error) {
+        // Already active: nothing to retry, the refetch below shows the real state.
+        if (!(error instanceof ApiError && error.code === 'ACCESS_ALREADY_ACTIVE')) throw error;
+      }
+      setLookup({ status: 'found', creator: await api.resolveCreator(publicCode) });
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'CREATOR_NOT_FOUND') {
+        setLookup({ status: 'unavailable' });
+      } else {
+        setRequestError(PROFILE_COPY.gap.requestFailed);
+      }
+    } finally {
+      inFlight.current = false;
+      setSending(false);
+    }
+  }, [api, publicCode]);
+
+  /** Access ended while browsing the gallery: the fresh profile shows the locked panel. */
+  const refreshProfile = useCallback(async () => {
+    try {
+      setLookup({ status: 'found', creator: await api.resolveCreator(publicCode) });
+    } catch (error) {
+      setLookup(
+        error instanceof ApiError && error.code === 'CREATOR_NOT_FOUND'
+          ? { status: 'unavailable' }
+          : { status: 'error' },
+      );
+    }
+  }, [api, publicCode]);
+  const onAccessLost = useCallback(() => void refreshProfile(), [refreshProfile]);
+
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
   const goExplore = () => void navigate('/explore', { replace: true });
   const goBack = () => void navigate(-1);
@@ -135,11 +183,24 @@ export function CreatorLinkPage({ api }: { api: MiniappApi }) {
       return <ErrorScreen kind="network" onRetry={retry} />;
     case 'found':
       return (
-        <main className={styles.page}>
-          <NotImplemented title={lookup.creator.display_name}>
-            <p className={styles.text}>Profil creator belum dibangun.</p>
-          </NotImplemented>
-        </main>
+        <CustomerFrame>
+          <CreatorProfileView
+            profile={lookup.creator}
+            timezone={state.status === 'authenticated' ? state.user.timezone : 'Asia/Jakarta'}
+            onBack={goBack}
+            onUnavailable={() => showFlash(PROFILE_COPY.gap.notYet)}
+            onRequestAccess={() => void requestAccess()}
+            sending={sending}
+            requestError={requestError}
+            gallery={
+              lookup.creator.access.state === 'ACTIVE' ? (
+                <ProfileGallery api={api} publicCode={publicCode} onAccessLost={onAccessLost} />
+              ) : null
+            }
+          />
+          <Outlet context={{ displayName: lookup.creator.display_name, onAccessLost }} />
+          <BottomToast message={flash} kind="info" />
+        </CustomerFrame>
       );
   }
 }

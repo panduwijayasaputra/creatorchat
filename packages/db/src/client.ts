@@ -6,7 +6,10 @@ import { PrismaClient } from './generated/client.js';
  * The caller owns the client and must `$disconnect()` it on shutdown.
  */
 export function createPrismaClient(connectionString: string = requireDatabaseUrl()): PrismaClient {
-  const adapter = new PrismaPg({ connectionString });
+  // Pin the session time zone: the driver adapter sends and reads timestamps as UTC wall-clock, so a
+  // server configured for another zone (a dev machine's local time) would shift every `now()`
+  // default relative to the dates the app writes and compares.
+  const adapter = new PrismaPg({ connectionString, options: '-c timezone=UTC' });
   return new PrismaClient({ adapter });
 }
 

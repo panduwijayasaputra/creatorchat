@@ -1,6 +1,6 @@
 import { buildSignedInitData, loadEnv } from '@creatorchat/backend-core';
 import {
-  CreatorLinkResponseSchema,
+  CreatorProfileResponseSchema,
   TelegramLoginResponseSchema,
   landingPathForRole,
 } from '@creatorchat/contracts';
@@ -119,11 +119,13 @@ describe('creator deep link, end to end', () => {
     const code = url.pathname.split('/').pop() ?? '';
     const resolved = await byCode(code, token);
     expect(resolved.status).toBe(200);
-    expect(CreatorLinkResponseSchema.parse(await resolved.json())).toEqual({
+    expect(CreatorProfileResponseSchema.parse(await resolved.json())).toEqual({
       public_code: 'salsa234',
       display_name: 'Salsa',
       bio: null,
       avatar_url: null,
+      conversation_id: null,
+      access: { state: 'GUEST' },
     });
     // Resolving a link grants nothing: still no subscription-like data, same role.
     expect(landingPathForRole('USER')).toBe('/chats');

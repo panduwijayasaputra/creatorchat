@@ -4,6 +4,13 @@ export interface TelegramWebApp {
   ready(): void;
   expand(): void;
   openTelegramLink?(url: string): void;
+  /** Telegram's own back arrow in the header (absent in old clients and outside Telegram). */
+  BackButton?: {
+    show(): void;
+    hide(): void;
+    onClick(handler: () => void): void;
+    offClick(handler: () => void): void;
+  };
 }
 
 declare global {

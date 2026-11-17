@@ -1,0 +1,14 @@
+/* Values from designs/.../html/AdmCrSubs.html; the table and toolbar styles come from the lists. */
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.danger {
+  color: var(--err-fg);
+}
+
+.addButton {
+  flex: none;
+}

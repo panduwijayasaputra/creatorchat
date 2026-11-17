@@ -1,0 +1,259 @@
+/* Values from designs/.../html/Subscriptions.html and StatesChats.html (390 px boards). */
+.page {
+  padding: 16px 20px 24px;
+  color: var(--ink);
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--bg);
+  box-shadow: var(--shadow-1);
+}
+
+.head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.disc {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(48, 37, 44, 0.08);
+}
+
+.disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.who {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.chip {
+  margin-top: 4px;
+}
+
+.when {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.primary,
+.outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  font-family: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.primary {
+  padding: 0 20px;
+  border: 0;
+  background: var(--rose);
+  color: #fff;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.primary:hover {
+  background: var(--rose-hover);
+}
+
+.outline {
+  padding: 0 16px;
+  border: 1.5px solid var(--field);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.outline:hover {
+  background: var(--pink-soft);
+}
+
+/* Subscriptions.html: the Profil link beside Buka Chat is 48 px tall plus its border (content-box). */
+.actions > .outline {
+  width: auto;
+  box-sizing: content-box;
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.primary:focus-visible,
+.outline:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.error {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2-pressed);
+  text-align: center;
+}
+
+.footer {
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+/* StatesChats layout: skeleton rows, and the centered empty / error panel. */
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  height: 76px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--line);
+}
+
+.skeletonDisc {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--pink);
+  flex: none;
+}
+
+.skeletonBars {
+  flex: 1;
+}
+
+.skeletonBarA {
+  width: 55%;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--pink);
+}
+
+.skeletonBarB {
+  width: 85%;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--pink-soft);
+  margin-top: 10px;
+}
+
+.panel {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 12px 60px;
+}
+
+.panelDisc {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--pink);
+  color: var(--rose);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panelDiscError {
+  background: var(--err-bg);
+  color: var(--err-fg);
+}
+
+.panelTitle {
+  margin-top: 20px;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+}
+
+.panelText {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-2);
+}
+
+.panelAction {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.panelAction .primary {
+  height: 52px;
+}

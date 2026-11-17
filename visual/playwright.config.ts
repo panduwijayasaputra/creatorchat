@@ -16,7 +16,8 @@ export default defineConfig({
       command: 'pnpm --filter @creatorchat/miniapp exec vite --port 5273 --strictPort',
       url: MINIAPP_URL,
       // The outside-Telegram sheet needs a (sample) bot username for its link.
-      env: { VITE_TELEGRAM_BOT_USERNAME: 'CreatorChatBot' },
+      // The harness fakes each Telegram session itself, so the dev auto-login stays off.
+      env: { VITE_TELEGRAM_BOT_USERNAME: 'CreatorChatBot', MINIAPP_DEV_TELEGRAM_LOGIN: 'off' },
       reuseExistingServer: true,
       timeout: 60_000,
     },

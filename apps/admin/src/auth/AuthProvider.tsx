@@ -26,7 +26,7 @@ export interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 let defaultApi: AdminApi | undefined;
-function getDefaultApi(): AdminApi {
+export function getDefaultApi(): AdminApi {
   defaultApi ??= createAdminApi();
   return defaultApi;
 }

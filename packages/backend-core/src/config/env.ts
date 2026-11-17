@@ -72,6 +72,24 @@ const baseSchema = z.object({
   R2_BUCKET: optionalString,
   R2_ACCESS_KEY_ID: optionalString,
   R2_SECRET_ACCESS_KEY: optionalString,
+  // Media (US-032). `local` keeps files on disk behind short-lived signed URLs served by the API
+  // (development and tests only); `r2` uses the private bucket.
+  STORAGE_DRIVER: z.enum(['local', 'r2']).default('local'),
+  STORAGE_LOCAL_DIR: z.string().min(1).default('.data/media'),
+  STORAGE_LOCAL_SIGNING_SECRET: optionalString,
+  MEDIA_MAX_PHOTO_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10 * 1024 * 1024),
+  MEDIA_MAX_VIDEO_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(200 * 1024 * 1024),
+  MEDIA_MAX_VIDEO_SECONDS: z.coerce.number().int().positive().default(300),
+  FFMPEG_PATH: z.string().min(1).default('ffmpeg'),
+  FFPROBE_PATH: z.string().min(1).default('ffprobe'),
   AI_PROVIDER: z.string().default('fake'),
   AI_MODEL: optionalString,
   AI_API_KEY: optionalString,
@@ -80,7 +98,34 @@ const baseSchema = z.object({
 const MIN_SECRET_LENGTH = 32;
 
 export const ServerEnvSchema = baseSchema.superRefine((env, ctx) => {
+  const secret = env.STORAGE_LOCAL_SIGNING_SECRET;
+  if (secret !== undefined && secret.length < MIN_SECRET_LENGTH) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['STORAGE_LOCAL_SIGNING_SECRET'],
+      message: `at least ${MIN_SECRET_LENGTH} characters`,
+    });
+  }
+  if (env.STORAGE_DRIVER === 'r2') {
+    for (const key of [
+      'R2_ACCOUNT_ENDPOINT',
+      'R2_BUCKET',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+    ] as const) {
+      if (env[key] === undefined) {
+        ctx.addIssue({ code: 'custom', path: [key], message: 'required when STORAGE_DRIVER=r2' });
+      }
+    }
+  }
   if (env.NODE_ENV !== 'production') return;
+  if (env.STORAGE_DRIVER === 'local') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['STORAGE_DRIVER'],
+      message: 'local disk storage is for development and tests only; use r2 in production',
+    });
+  }
   const secretKeys = [
     'USER_SESSION_SECRET',
     'ADMIN_ACCESS_TOKEN_SECRET',

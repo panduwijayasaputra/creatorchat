@@ -6,6 +6,8 @@ allowBuilds:
   '@swc/core': true
   argon2: true
   esbuild: true
+  # Optional native speed-up for BullMQ's msgpack; the pure JS fallback is fine here.
+  msgpackr-extract: false
   prisma: true
 minimumReleaseAgeExclude:
   - "@eslint/config-array@0.23.6"

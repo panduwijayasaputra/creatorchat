@@ -49,6 +49,22 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('button', { name: 'Block Creator' })).toBeInTheDocument();
   });
 
+  it('places the afterReason text under the reason and honours top', async () => {
+    render(
+      <Harness
+        onConfirm={vi.fn()}
+        top={110}
+        reason={{ label: 'Alasan (wajib)', required: true }}
+        afterReason="Tidak ada pembayaran."
+      />,
+    );
+    const dialog = await openDialog();
+    expect(dialog).toHaveStyle({ top: '110px' });
+    const reason = screen.getByLabelText('Alasan (wajib)');
+    const after = screen.getByText('Tidak ada pembayaran.');
+    expect(reason.compareDocumentPosition(after) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('is not rendered while closed', () => {
     render(<Harness onConfirm={vi.fn()} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -166,5 +182,95 @@ describe('ConfirmDialog', () => {
     expect(document.body.style.overflow).toBe('hidden');
     await userEvent.keyboard('{Escape}');
     expect(document.body.style.overflow).toBe('');
+  });
+
+  describe('review dialogs (US-012 additions)', () => {
+    it('keeps the confirm button inert with confirmDisabled and never fires', async () => {
+      const onConfirm = vi.fn();
+      render(<Harness onConfirm={onConfirm} confirmDisabled />);
+      await openDialog();
+      const confirm = screen.getByRole('button', { name: 'Block Creator' });
+      expect(confirm).toBeDisabled();
+      await userEvent.click(confirm);
+      expect(onConfirm).not.toHaveBeenCalled();
+    });
+
+    it('shows pendingLabel with a spinner while pending and the normal label afterwards', async () => {
+      const d = deferred();
+      render(<Harness onConfirm={() => d.promise} pendingLabel="Memproses…" />);
+      await openDialog();
+      await userEvent.click(screen.getByRole('button', { name: 'Block Creator' }));
+      const busy = await screen.findByRole('button', { name: 'Memproses…' });
+      expect(busy).toHaveAttribute('aria-busy', 'true');
+      expect(busy.querySelector('svg')).not.toBeNull();
+      d.resolve();
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    it('stays open when onConfirm resolves false, and is usable again', async () => {
+      const onConfirm = vi.fn(async () => false);
+      render(<Harness onConfirm={onConfirm} />);
+      await openDialog();
+      await userEvent.click(screen.getByRole('button', { name: 'Block Creator' }));
+      await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Block Creator' })).toBeEnabled();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('closes when onConfirm resolves true or nothing', async () => {
+      render(<Harness onConfirm={async () => true} />);
+      await openDialog();
+      await userEvent.click(screen.getByRole('button', { name: 'Block Creator' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    describe('required reason message', () => {
+      const reason = {
+        label: 'Alasan penolakan (wajib)',
+        required: true,
+        placeholder: 'Tulis alasan singkat',
+        hint: 'Alasan dicatat di audit log.',
+        requiredMessage: 'Alasan wajib diisi.',
+      };
+
+      it('shows the hint first, then the red message once the field is touched and empty', async () => {
+        render(<Harness onConfirm={vi.fn()} reason={reason} />);
+        await openDialog();
+        const field = screen.getByLabelText('Alasan penolakan (wajib)');
+        expect(screen.getByText('Alasan dicatat di audit log.')).toBeInTheDocument();
+        expect(screen.queryByText('Alasan wajib diisi.')).not.toBeInTheDocument();
+
+        await userEvent.type(field, 'a');
+        await userEvent.clear(field);
+        expect(screen.getByText('Alasan wajib diisi.')).toBeInTheDocument();
+        expect(screen.queryByText('Alasan dicatat di audit log.')).not.toBeInTheDocument();
+        expect(field).toHaveAttribute('aria-invalid', 'true');
+        expect(field).toHaveAccessibleDescription('Alasan wajib diisi.');
+        expect(screen.getByRole('button', { name: 'Block Creator' })).toBeDisabled();
+      });
+
+      it('treats whitespace as empty, and clears the message once text is typed', async () => {
+        const onConfirm = vi.fn();
+        render(<Harness onConfirm={onConfirm} reason={reason} />);
+        await openDialog();
+        const field = screen.getByLabelText('Alasan penolakan (wajib)');
+        await userEvent.type(field, '   ');
+        expect(screen.getByText('Alasan wajib diisi.')).toBeInTheDocument();
+        await userEvent.type(field, 'Belum jelas');
+        expect(screen.queryByText('Alasan wajib diisi.')).not.toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: 'Block Creator' }));
+        await waitFor(() => expect(onConfirm).toHaveBeenCalledWith('Belum jelas'));
+      });
+
+      it('shows no message without requiredMessage (the button stays disabled)', async () => {
+        const { requiredMessage: _unused, ...plain } = reason;
+        render(<Harness onConfirm={vi.fn()} reason={plain} />);
+        await openDialog();
+        await userEvent.type(screen.getByLabelText('Alasan penolakan (wajib)'), ' ');
+        expect(screen.queryByText('Alasan wajib diisi.')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Block Creator' })).toBeDisabled();
+      });
+    });
   });
 });

@@ -36,6 +36,7 @@ export const ClockIcon = createIcon(
   </>,
 );
 export const XIcon = createIcon('X', <path d="M6 6l12 12M18 6L6 18" />);
+export const PlusIcon = createIcon('Plus', <path d="M12 5v14M5 12h14" />);
 export const InfoCircleIcon = createIcon(
   'InfoCircle',
   <>
@@ -175,6 +176,10 @@ export const HelpCircleIcon = createIcon(
     <circle cx="12" cy="12" r="9" />
     <path d="M9.6 9.5a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.9M12 17v.01" />
   </>,
+);
+export const PaperclipIcon = createIcon(
+  'Paperclip',
+  <path d="M20 11.5l-7.6 7.6a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.7l-8 8a1.7 1.7 0 0 1-2.4-2.4l7.3-7.3" />,
 );
 export const UploadIcon = createIcon('Upload', <path d="M12 16V4.5M7 9.5l5-5 5 5M4.5 20h15" />);
 export const CopyIcon = createIcon(

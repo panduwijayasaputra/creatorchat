@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { installDevInitData } from './dev-init-data';
+import { installDevInitData, installServerDevInitData } from './dev-init-data';
 import { botUrl, browserTelegram } from './webapp';
 
 afterEach(() => {
@@ -51,5 +51,41 @@ describe('installDevInitData', () => {
     window.Telegram = { WebApp: { initData: 'real=1', ready() {}, expand() {} } };
     expect(installDevInitData('?tgdev=fake')).toBe(false);
     expect(browserTelegram.getInitData()).toBe('real=1');
+  });
+});
+
+describe('installServerDevInitData', () => {
+  const ok = (initData: string) => vi.fn(async () => Response.json({ initData }));
+
+  afterEach(() => {
+    sessionStorage.clear();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('installs initData signed by the dev server, passing and remembering ?tgdev_* identity', async () => {
+    window.history.replaceState(null, '', '/?tgdev_id=9000000001&tgdev_username=salsa_sample');
+    const fetchFn = ok('a=1&hash=zz');
+    expect(await installServerDevInitData(window, fetchFn)).toBe(true);
+    expect(fetchFn).toHaveBeenCalledWith('/__dev/initdata?id=9000000001&username=salsa_sample');
+    expect(browserTelegram.getInitData()).toBe('a=1&hash=zz');
+
+    delete window.Telegram;
+    window.history.replaceState(null, '', '/inbox');
+    await installServerDevInitData(window, fetchFn);
+    expect(fetchFn).toHaveBeenLastCalledWith('/__dev/initdata?id=9000000001&username=salsa_sample');
+  });
+
+  it('leaves the outside-Telegram state when the endpoint is off or fails, and skips real Telegram', async () => {
+    const html = vi.fn(async () => new Response('<!doctype html>', { status: 200 }));
+    expect(await installServerDevInitData(window, html)).toBe(false);
+    const failed = vi.fn(async () => Response.json({ error: 'no token' }, { status: 400 }));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(await installServerDevInitData(window, failed)).toBe(false);
+    expect(browserTelegram.getInitData()).toBeNull();
+
+    window.Telegram = { WebApp: { initData: 'real=1', ready() {}, expand() {} } };
+    const fetchFn = ok('x');
+    expect(await installServerDevInitData(window, fetchFn)).toBe(false);
+    expect(fetchFn).not.toHaveBeenCalled();
   });
 });

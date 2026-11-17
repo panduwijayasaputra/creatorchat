@@ -1,0 +1,340 @@
+/* Values from designs/.../html/Chats.html and StatesChats.html (390 px boards). */
+.page {
+  color: var(--ink);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.head {
+  padding: 16px 20px 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  min-height: 76px;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--pink-soft);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: -2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  margin: 0 20px 0 84px;
+}
+
+.disc {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(48, 37, 44, 0.08);
+}
+
+.disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.top,
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.top {
+  align-items: baseline;
+}
+
+.bottom {
+  align-items: center;
+}
+
+.name {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+  flex: none;
+}
+
+.preview {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  min-width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--rose);
+  color: #fff;
+  font-size: 13px;
+  line-height: 22px;
+  font-weight: 700;
+  text-align: center;
+  flex: none;
+}
+
+.chip {
+  margin-top: 6px;
+}
+
+.discover {
+  margin: 24px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--pink);
+  min-height: 64px;
+  box-sizing: border-box;
+  color: inherit;
+  text-decoration: none;
+}
+
+.discover:hover {
+  background: var(--pink-hover);
+}
+
+.discover:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.discoverIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--rose);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.discoverText {
+  flex: 1;
+  min-width: 0;
+}
+
+.discoverTitle {
+  display: block;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.discoverSub {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2-pressed);
+}
+
+.more {
+  padding: 16px 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.moreError {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2-pressed);
+}
+
+.moreButton {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 16px;
+  border: 1.5px solid var(--field);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.moreButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* StatesChats: skeleton rows and the centered empty / error panel. */
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  height: 76px;
+  box-sizing: border-box;
+}
+
+.skeletonDisc {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--pink);
+  flex: none;
+}
+
+.skeletonBars {
+  flex: 1;
+}
+
+.skeletonBarA {
+  width: 55%;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--pink);
+}
+
+.skeletonBarB {
+  width: 85%;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--pink-soft);
+  margin-top: 10px;
+}
+
+/* StatesChats centers the panel in the screen: the board pads 60 px at the bottom of 844 px. */
+.panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 32px 34px;
+}
+
+.panelDisc {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--pink);
+  color: var(--rose);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panelDiscError {
+  background: var(--err-bg);
+  color: var(--err-fg);
+}
+
+.panelTitle {
+  margin-top: 20px;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+}
+
+.panelText {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-2);
+}
+
+.panelAction {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--rose);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.primary:hover {
+  background: var(--rose-hover);
+}
+
+.primary:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}

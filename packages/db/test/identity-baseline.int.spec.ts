@@ -153,18 +153,28 @@ describe('identity baseline: audit log', () => {
 });
 
 describe('identity baseline: scope', () => {
-  it('creates only the identity tables plus creators (US-005), creator requests and subscriptions (US-010) and the Prisma migrations table', async () => {
+  it('creates only the identity tables plus creators (US-005), creator requests and subscriptions (US-010), the outbox (US-012), access events and conversations (US-020), access requests (US-022), messages (US-026), conversation reads (US-028), media assets and gallery items (US-032), message attachments (US-036) and the Prisma migrations table', async () => {
     const rows = await prisma.$queryRaw<{ table_name: string }[]>`
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
       ORDER BY table_name`;
     expect(rows.map((r) => r.table_name)).toEqual([
       '_prisma_migrations',
+      'access_requests',
       'admin_accounts',
       'audit_logs',
+      'conversation_reads',
+      'conversations',
       'creator_applications',
       'creators',
+      'gallery_items',
+      'media_assets',
+      'message_attachments',
+      'messages',
+      'notification_deliveries',
+      'outbox_events',
       'sessions',
+      'subscription_events',
       'subscriptions',
       'users',
     ]);

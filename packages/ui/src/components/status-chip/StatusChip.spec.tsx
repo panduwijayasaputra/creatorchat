@@ -9,6 +9,7 @@ const expected: [ChipStatus, string][] = [
   ['success', 'Berhasil'],
   ['failed', 'Gagal'],
   ['expired', 'Kedaluwarsa'],
+  ['revoked', 'Dicabut'],
   ['rejected', 'Ditolak'],
   ['pending', 'Menunggu'],
   ['none', 'Belum mengajukan'],

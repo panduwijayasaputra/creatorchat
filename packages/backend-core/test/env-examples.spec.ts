@@ -53,6 +53,7 @@ describe('.env.example as real input', () => {
       telegram: 'unconfigured',
       telegramWebhook: 'unconfigured',
       r2: 'unconfigured',
+      storage: 'unconfigured',
       ai: 'unconfigured',
       aiProvider: 'fake',
     });

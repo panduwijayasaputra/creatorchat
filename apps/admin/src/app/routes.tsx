@@ -1,8 +1,16 @@
 import type { ReactElement } from 'react';
 import { Outlet, type RouteObject } from 'react-router';
-import { AuthProvider, useAuth } from '../auth/AuthProvider';
+import { AuthProvider, getDefaultApi, useAuth } from '../auth/AuthProvider';
 import type { AdminApi } from '../auth/api-client';
 import { RedirectIfAuthenticated, RequireAdmin } from '../auth/guards';
+import { CreatorsPage } from '../creators/CreatorsPage';
+import { MediaDetailPage } from '../creators/detail/gallery/MediaDetailPage';
+import { CreatorDetailPage } from '../creators/detail/CreatorDetailPage';
+import { LogDetailPage } from '../logs/LogDetailPage';
+import { RequestDetailPage } from '../users/detail/RequestDetailPage';
+import { SubscriptionDetailPage } from '../users/detail/subscriptions/SubscriptionDetailPage';
+import { UserDetailPage } from '../users/detail/UserDetailPage';
+import { UsersPage } from '../users/UsersPage';
 import { HealthStatus } from '../components/HealthStatus';
 import { NotImplemented } from '../components/NotImplemented';
 import { AdminShell } from '../components/shell/AdminShell';
@@ -49,6 +57,25 @@ export function createAdminRoutes({
   api,
   extraRoutes = [],
 }: AdminRoutesOptions = {}): RouteObject[] {
+  const client = api ?? getDefaultApi();
+  const creators: RouteHandle = { title: 'Creator', breadcrumb: [home, { label: 'Creator' }] };
+  const creatorDetail: RouteHandle = {
+    title: 'Detail Creator',
+    breadcrumb: [home, { label: 'Creator', to: '/creators' }, { label: 'Detail' }],
+  };
+  const users: RouteHandle = { title: 'User', breadcrumb: [home, { label: 'User' }] };
+  const userDetail: RouteHandle = {
+    title: 'Detail User',
+    breadcrumb: [home, { label: 'User', to: '/users' }, { label: 'Detail' }],
+  };
+  const logDetail: RouteHandle = {
+    title: 'Detail Log',
+    breadcrumb: [home, { label: 'Log & History', to: '/logs' }, { label: 'Detail Log' }],
+  };
+  const subscriptionDetail: RouteHandle = {
+    title: 'Detail Langganan',
+    breadcrumb: [home, { label: 'User', to: '/users' }, { label: 'Detail Langganan' }],
+  };
   const dashboard: RouteHandle = { title: 'Dashboard', breadcrumb: [{ label: 'Dashboard' }] };
   return [
     ...extraRoutes,
@@ -75,8 +102,56 @@ export function createAdminRoutes({
                     </NotImplemented>
                   ),
                 },
-                page('creators', 'Creator'),
-                page('users', 'User'),
+                {
+                  path: 'creators',
+                  handle: creators,
+                  element: <CreatorsPage api={client} />,
+                },
+                {
+                  path: 'creators/:id',
+                  handle: creatorDetail,
+                  element: <CreatorDetailPage api={client} />,
+                },
+                {
+                  path: 'creators/:id/gallery/:mediaId',
+                  handle: creatorDetail,
+                  element: <MediaDetailPage api={client} />,
+                },
+                {
+                  path: 'creators/:id/:tab',
+                  handle: creatorDetail,
+                  element: <CreatorDetailPage api={client} />,
+                },
+                {
+                  path: 'logs/:id',
+                  handle: logDetail,
+                  element: <LogDetailPage api={client} />,
+                },
+                {
+                  path: 'users',
+                  handle: users,
+                  element: <UsersPage api={client} />,
+                },
+                {
+                  path: 'users/:id',
+                  handle: userDetail,
+                  element: <UserDetailPage api={client} />,
+                },
+                {
+                  path: 'users/:id/requests/:requestId',
+                  handle: userDetail,
+                  element: <RequestDetailPage api={client} />,
+                },
+                {
+                  path: 'users/:id/subscriptions/:subId',
+                  handle: subscriptionDetail,
+                  element: <SubscriptionDetailPage api={client} />,
+                },
+                {
+                  path: 'users/:id/:tab',
+                  handle: userDetail,
+                  element: <UserDetailPage api={client} />,
+                },
                 page('logs', 'Log & History'),
                 page('ai', 'AI'),
                 page('settings', 'Pengaturan'),

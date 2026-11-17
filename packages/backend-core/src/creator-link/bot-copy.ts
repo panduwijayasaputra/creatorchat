@@ -8,4 +8,13 @@ export const BOT_COPY = {
   openButton: 'Buka Creator Chat',
   /** The bot's menu button label (kept short: Telegram truncates long labels). */
   menuButton: 'Buka Aplikasi',
+  /**
+   * Creator request result (US-013). The approved text is verbatim from the `RequestApproved` board.
+   * The rejected text is NOT designed: placeholder wording until the product owner supplies it.
+   */
+  requestApproved:
+    'Selamat, permintaanmu disetujui. Akunmu sekarang akun creator. Buka aplikasi untuk masuk ke Inbox.',
+  requestRejectedIntro: 'Permintaanmu menjadi creator belum bisa disetujui.',
+  requestRejectedReason: 'Alasan dari admin:',
+  requestRejectedOutro: 'Kamu bisa memperbaiki isian lalu mengajukan lagi.',
 } as const;

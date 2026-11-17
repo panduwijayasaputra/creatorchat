@@ -1,6 +1,6 @@
 # US-011: Creator request status and resubmission
 
-**Status:** planned
+**Status:** ready_for_uat
 **Priority:** high
 **Feature:** creator-applications
 **Phase:** B
@@ -23,13 +23,13 @@ As a USER who asked to become a creator, I want to see where my request stands a
 ## Tasks
 
 ### TASK-067: Seed (pending and rejected fixtures), `instagramHandle` helper, status-read API tests
-**Status:** pending
+**Status:** done
 
 ### TASK-068: Status screen `/profile/creator-request/status` (`RequestPending`, `RequestRejected`)
-**Status:** pending
+**Status:** done
 
 ### TASK-069: Retry variant of the form (`CreatorRequestRetry`)
-**Status:** pending
+**Status:** done
 
 ### TASK-070: Profile variants (`ProfilePending`, `ProfileRejected`) and visual checks
-**Status:** pending
+**Status:** done

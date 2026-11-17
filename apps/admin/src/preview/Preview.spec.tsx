@@ -11,6 +11,7 @@ const SECTIONS = [
   'inputs',
   'tabs-kv',
   'toast-dialog',
+  'creator-review',
   'table-loading',
   'table-empty',
   'table-no-results',
@@ -75,5 +76,28 @@ describe('Admin component preview', () => {
     await waitFor(() =>
       expect(within(dialog).getByRole('alert')).toHaveTextContent('Gagal memproses'),
     );
+  });
+
+  it('opens the creator review dialogs from the preview, with Raka blocked by his subscription', async () => {
+    render(<Preview />);
+    const section = document.querySelector(
+      '[data-preview-section="creator-review"]',
+    ) as HTMLElement;
+    await userEvent.click(within(section).getByRole('button', { name: 'Setujui (Maya)' }));
+    expect(
+      await screen.findByText('Diperiksa ulang: tidak ada langganan pelanggan aktif (15.02 WIB)'),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Batal' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await userEvent.click(
+      within(section).getByRole('button', { name: 'Setujui (langganan aktif)' }),
+    );
+    expect(await screen.findByText('Tidak bisa disetujui')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Batal' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await userEvent.click(within(section).getByRole('button', { name: 'Tolak (Luna)' }));
+    expect(await screen.findByLabelText('Alasan penolakan (wajib)')).toBeInTheDocument();
   });
 });

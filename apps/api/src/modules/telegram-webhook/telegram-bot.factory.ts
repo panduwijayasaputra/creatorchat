@@ -2,12 +2,19 @@ import { buildStartReply } from '@creatorchat/backend-core';
 import { Bot } from 'grammy';
 import type { UserFromGetMe } from 'grammy/types';
 
+const ON_START_TIMEOUT_MS = 1500;
+
 export interface TelegramBotConfig {
   token: string;
   username: string;
   miniAppUrl: string;
   /** Test seam: a fake Bot API root. Production uses Telegram's own. */
   apiRoot?: string;
+  /**
+   * Called with the sender's Telegram id when a user starts the bot in a private chat (US-013: this
+   * clears the "bot blocked" flag). A failure or a slow answer never stops the reply.
+   */
+  onStart?: (telegramId: bigint) => Promise<void>;
   /** Called with the error class name only; never the message (it may echo Telegram data). */
   onError?: (errorName: string) => void;
 }
@@ -52,6 +59,16 @@ export function createTelegramBot(config: TelegramBotConfig): Bot {
 
   bot.command('start', async (ctx) => {
     if (ctx.chat.type !== 'private') return;
+    if (ctx.from && config.onStart) {
+      try {
+        await Promise.race([
+          config.onStart(BigInt(ctx.from.id)),
+          new Promise<void>((resolve) => setTimeout(resolve, ON_START_TIMEOUT_MS).unref()),
+        ]);
+      } catch (error) {
+        config.onError?.(error instanceof Error ? error.name : 'UnknownError');
+      }
+    }
     const reply = buildStartReply({ payload: ctx.match, miniAppUrl: config.miniAppUrl });
     if (!reply) return;
     await ctx.reply(reply.text, {

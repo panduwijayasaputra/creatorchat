@@ -1,0 +1,126 @@
+/* Values from designs/.../html/AdmDlgApprove.html, AdmDlgApproveFail.html and AdmDlgReject.html. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.chip {
+  margin-left: auto;
+}
+
+.loading {
+  color: var(--ink-2);
+}
+
+.skeleton {
+  width: 100%;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--pink);
+}
+
+.ok {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+  font-weight: 600;
+}
+
+.ok svg {
+  flex: none;
+}
+
+.note {
+  color: var(--ink-2);
+}
+
+/* AdmDlgApproveFail: why the approval cannot go through. */
+.fail {
+  box-sizing: border-box;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--err-bg);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.failDisc {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--err-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.failText {
+  min-width: 0;
+  flex: 1;
+}
+
+.failTitle {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.failBody {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.retry {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rose);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}

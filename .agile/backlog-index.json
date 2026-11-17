@@ -96,7 +96,7 @@
       "phase": "B",
       "file": "features/creator-applications/US-011-request-status-resubmit.md",
       "title": "Creator request status and resubmission",
-      "status": "planned",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -105,7 +105,7 @@
       "phase": "B",
       "file": "features/creator-applications/US-012-admin-approve-reject-request.md",
       "title": "Admin approves or rejects a creator request",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -114,7 +114,7 @@
       "phase": "B",
       "file": "features/creator-applications/US-013-bot-request-result.md",
       "title": "Bot sends the creator request result",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "medium"
     },
     {
@@ -123,7 +123,7 @@
       "phase": "B",
       "file": "features/admin-accounts/US-014-admin-creator-list.md",
       "title": "Admin creator list",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -132,7 +132,7 @@
       "phase": "B",
       "file": "features/admin-accounts/US-015-admin-creator-detail.md",
       "title": "Admin creator detail (ringkasan and history)",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -141,7 +141,7 @@
       "phase": "B",
       "file": "features/admin-accounts/US-016-admin-block-unblock-creator.md",
       "title": "Admin blocks and unblocks a creator",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -150,7 +150,7 @@
       "phase": "B",
       "file": "features/admin-accounts/US-017-admin-user-list.md",
       "title": "Admin user list",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -159,7 +159,7 @@
       "phase": "B",
       "file": "features/admin-accounts/US-018-admin-user-detail.md",
       "title": "Admin user detail, creator requests and history",
-      "status": "backlog",
+      "status": "ready_for_uat",
       "priority": "high"
     },
     {
@@ -168,7 +168,169 @@
       "phase": "B",
       "file": "features/admin-accounts/US-019-admin-block-unblock-user.md",
       "title": "Admin blocks and unblocks a user",
-      "status": "backlog",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-020",
+      "feature": "customer-access",
+      "phase": "C",
+      "file": "features/customer-access/US-020-admin-grant-extend-revoke-access.md",
+      "title": "Admin grants, extends and revokes access from user detail",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-021",
+      "feature": "customer-access",
+      "phase": "C",
+      "file": "features/customer-access/US-021-admin-subscription-detail-creator-subscribers.md",
+      "title": "Admin subscription detail and creator Subscriber tab",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-022",
+      "feature": "customer-access",
+      "phase": "C",
+      "file": "features/customer-access/US-022-explore-creator-profile-access-state.md",
+      "title": "Explore and creator profile by access state",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-023",
+      "feature": "customer-access",
+      "phase": "C",
+      "file": "features/customer-access/US-023-customer-request-trial-renewal.md",
+      "title": "Customer requests trial or renewal access",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-024",
+      "feature": "customer-access",
+      "phase": "C",
+      "file": "features/customer-access/US-024-admin-review-access-requests.md",
+      "title": "Admin reviews customer access requests",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-025",
+      "feature": "customer-access",
+      "phase": "C",
+      "file": "features/customer-access/US-025-customer-subscriptions-page.md",
+      "title": "Customer Langganan page",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-026",
+      "feature": "manual-chat",
+      "phase": "C",
+      "file": "features/manual-chat/US-026-customer-private-chat.md",
+      "title": "Customer private chat: read history and send text",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-027",
+      "feature": "manual-chat",
+      "phase": "C",
+      "file": "features/manual-chat/US-027-customer-chat-list.md",
+      "title": "Customer chat list",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-028",
+      "feature": "manual-chat",
+      "phase": "C",
+      "file": "features/manual-chat/US-028-creator-inbox.md",
+      "title": "Creator inbox",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-029",
+      "feature": "manual-chat",
+      "phase": "C",
+      "file": "features/manual-chat/US-029-creator-conversation-manual-reply.md",
+      "title": "Creator conversation, manual reply and customer detail",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-030",
+      "feature": "manual-chat",
+      "phase": "C",
+      "file": "features/manual-chat/US-030-read-receipts-unread.md",
+      "title": "Read receipts and unread counts",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-031",
+      "feature": "manual-chat",
+      "phase": "C",
+      "file": "features/manual-chat/US-031-realtime-reconnect.md",
+      "title": "Realtime updates and reconnect",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-032",
+      "feature": "creator-gallery",
+      "phase": "D",
+      "file": "features/creator-gallery/US-032-creator-gallery-upload.md",
+      "title": "Creator gallery: upload photos and videos",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-033",
+      "feature": "creator-gallery",
+      "phase": "D",
+      "file": "features/creator-gallery/US-033-creator-gallery-viewer.md",
+      "title": "Creator gallery viewer",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-034",
+      "feature": "creator-gallery",
+      "phase": "D",
+      "file": "features/creator-gallery/US-034-subscriber-gallery-profile.md",
+      "title": "Subscriber gallery on the creator profile",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-035",
+      "feature": "creator-gallery",
+      "phase": "D",
+      "file": "features/creator-gallery/US-035-admin-creator-gallery-tab.md",
+      "title": "Admin creator Galeri tab and media detail",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-036",
+      "feature": "chat-media",
+      "phase": "D",
+      "file": "features/chat-media/US-036-creator-send-chat-media.md",
+      "title": "Creator sends a photo or video in chat",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-037",
+      "feature": "chat-media",
+      "phase": "D",
+      "file": "features/chat-media/US-037-customer-receive-chat-media.md",
+      "title": "Customer receives and opens chat media",
+      "status": "ready_for_uat",
       "priority": "high"
     }
   ]

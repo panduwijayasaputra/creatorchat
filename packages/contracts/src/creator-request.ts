@@ -131,3 +131,14 @@ export const SubmitCreatorRequestResponseSchema = z.strictObject({
   request: CreatorApplicationSchema,
 });
 export type SubmitCreatorRequestResponse = z.infer<typeof SubmitCreatorRequestResponseSchema>;
+
+const STORED_INSTAGRAM = /^https?:\/\/(?:www\.)?instagram\.com\/([A-Za-z0-9._]{1,30})\/?$/;
+
+/**
+ * `@handle` for a stored Instagram profile URL (the status screen shows this form). A value that
+ * does not have the stored shape is returned unchanged; never throws.
+ */
+export function instagramHandle(url: string): string {
+  const handle = STORED_INSTAGRAM.exec(url)?.[1];
+  return handle ? `@${handle}` : url;
+}

@@ -99,6 +99,13 @@
   line-height: 22px;
   resize: vertical;
 }
+.reasonInvalid {
+  border-color: var(--err-fg);
+}
+.reason::placeholder {
+  color: var(--ink-2);
+  opacity: 1;
+}
 .reason:disabled {
   background: var(--pink-soft);
 }
@@ -108,6 +115,24 @@
   font-size: 13px;
   line-height: 18px;
   color: var(--ink-2);
+}
+
+.hintError {
+  color: var(--err-fg);
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
 }
 
 .error {
@@ -122,4 +147,17 @@
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+}
+
+/* While the confirm call runs, Batal stays inert but keeps its outlined look (AdmDlgApproveLoading). */
+.actions .cancel:disabled:not(.link),
+.actions .cancel[aria-disabled='true']:not(.link) {
+  background: var(--surface);
+  border-color: var(--field);
+  color: var(--ink);
+  cursor: progress;
+}
+
+.after {
+  color: var(--ink-2);
 }

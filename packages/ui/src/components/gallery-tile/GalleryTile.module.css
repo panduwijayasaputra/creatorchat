@@ -1,0 +1,147 @@
+.cell {
+  position: relative;
+  border-radius: 12px;
+}
+
+.frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3dacb;
+  padding: 0;
+  border: 0;
+  font: inherit;
+}
+
+button.frame {
+  cursor: pointer;
+}
+
+.cellSelected {
+  box-shadow: 0 0 0 3px #a83f67;
+}
+
+.check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #a83f67;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #c98f78;
+}
+
+.duration {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px 0 6px;
+  border-radius: 12px;
+  background: rgba(48, 37, 44, 0.82);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.fresh {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  background: #a83f67;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 22px;
+  font-weight: 700;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(48, 37, 44, 0.74);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.track {
+  width: 60%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #ffffff;
+}
+
+.failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px dashed #a3261d;
+  background: #fbe3e0;
+  color: #a3261d;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.retry {
+  color: #a83f67;
+  text-decoration: underline;
+}
+
+.portrait {
+  aspect-ratio: 4 / 5;
+}

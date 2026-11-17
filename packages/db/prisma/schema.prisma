@@ -27,6 +27,45 @@ enum AdminStatus {
   DISABLED
 }
 
+enum SubscriptionEventType {
+  GRANT
+  EXTEND
+  REVOKE
+}
+
+enum MessageType {
+  TEXT
+  MEDIA
+}
+
+/// Who produced a message. MANUAL = a person typed it; AI joins in Phase F. Creator-side metadata only.
+enum MediaKind {
+  PHOTO
+  VIDEO
+}
+
+enum MediaState {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum MediaPurpose {
+  GALLERY
+  CHAT
+}
+
+enum MessageOrigin {
+  MANUAL
+  AI
+}
+
+enum ConversationMode {
+  AI
+  MANUAL
+}
+
 enum CreatorStatus {
   ACTIVE
   BLOCKED
@@ -41,6 +80,23 @@ enum CreatorApplicationStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum OutboxEventStatus {
+  PENDING
+  /// Handed to a queue job; the reconciler puts a stale one back to PENDING.
+  ENQUEUED
+  DONE
+  FAILED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENDING
+  SENT
+  BOT_BLOCKED
+  FAILED
+  SKIPPED
 }
 
 enum AuditActorType {
@@ -65,6 +121,8 @@ model User {
   bio               String?
   /// IANA timezone used for display only.
   timezone          String        @default("Asia/Jakarta")
+  /// Set when Telegram answered 403 to a bot message; cleared when the user sends /start again.
+  botBlockedAt      DateTime?     @map("bot_blocked_at") @db.Timestamptz(3)
   /// Bumped on block / role change so stale sessions lose privileges.
   sessionVersion    Int           @default(1) @map("session_version")
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -74,6 +132,11 @@ model User {
   creator             Creator?
   creatorApplications CreatorApplication[]
   subscriptions       Subscription[]
+  accessRequests      AccessRequest[]
+  conversations       Conversation[]
+  messages            Message[]
+  conversationReads   ConversationRead[]
+  notifications       NotificationDelivery[]
 
   @@map("users")
 }
@@ -87,8 +150,10 @@ model AdminAccount {
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions             Session[]
-  reviewedApplications CreatorApplication[]
+  sessions               Session[]
+  reviewedApplications   CreatorApplication[]
+  reviewedAccessRequests AccessRequest[]
+  subscriptionEvents     SubscriptionEvent[]
 
   @@map("admin_accounts")
 }
@@ -96,18 +161,83 @@ model AdminAccount {
 /// Minimal creator record (US-005); the profile fields arrive with Phase B.
 /// The user must have role CREATOR; the approval flow enforces that transactionally.
 model Creator {
-  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId     String        @unique @map("user_id") @db.Uuid
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String        @unique @map("user_id") @db.Uuid
   /// 8 chars of lowercase base32 (CHECK in the migration). Server-generated, immutable.
-  publicCode String        @unique @map("public_code")
-  status     CreatorStatus @default(ACTIVE)
-  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  publicCode     String        @unique @map("public_code")
+  status         CreatorStatus @default(ACTIVE)
+  /// Copied from the approved request (US-012). Existing rows default to HUMAN.
+  creatorType    CreatorType   @default(HUMAN) @map("creator_type")
+  /// Normalised https://instagram.com/<handle>, copied from the approved request; null for creators that were not created through a request.
+  instagramUrl   String?       @map("instagram_url")
+  /// Last "Media #N" handed out in the gallery (US-032); incremented under the row lock.
+  lastGallerySeq Int           @default(0) @map("last_gallery_seq")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Restrict)
-  subscriptions Subscription[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  subscriptions  Subscription[]
+  conversations  Conversation[]
+  accessRequests AccessRequest[]
+  mediaAssets    MediaAsset[]
+  galleryItems   GalleryItem[]
 
   @@map("creators")
+}
+
+/// One uploaded photo or video (US-032). The client only ever sees the view (id, state, signed
+/// thumbnail); keys never leave the server. CHECKs in the migration: READY needs file facts.
+model MediaAsset {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId      String       @map("creator_id") @db.Uuid
+  /// Made by the client; (creator, client_upload_id) makes a retried init return the same asset.
+  clientUploadId String       @map("client_upload_id") @db.Uuid
+  purpose        MediaPurpose
+  kind           MediaKind
+  state          MediaState   @default(PENDING)
+  objectKey      String       @unique @map("object_key")
+  declaredType   String       @map("declared_type")
+  declaredBytes  BigInt       @map("declared_bytes")
+  /// Verified by the server (magic bytes / probe), not the client's claim.
+  mime           String?
+  sizeBytes      BigInt?      @map("size_bytes")
+  width          Int?
+  height         Int?
+  durationMs     Int?         @map("duration_ms")
+  thumbKey       String?      @unique @map("thumb_key")
+  /// CHAT uploads belong to exactly one conversation (CHECK in the migration); gallery ones to none.
+  conversationId String?      @map("conversation_id") @db.Uuid
+  failureCode    String?      @map("failure_code")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  uploadedAt     DateTime?    @map("uploaded_at") @db.Timestamptz(3)
+  readyAt        DateTime?    @map("ready_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  creator      Creator             @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  conversation Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  galleryItems GalleryItem[]
+  attachments  MessageAttachment[]
+
+  @@unique([creatorId, clientUploadId])
+  @@index([state, createdAt])
+  @@map("media_assets")
+}
+
+/// A creator's gallery membership of a READY asset. `seq` is the creator's "Media #N" and the
+/// gallery order everywhere; items are never deleted, so numbers are stable.
+model GalleryItem {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId String   @map("creator_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  seq       Int
+  addedAt   DateTime @default(now()) @map("added_at") @db.Timestamptz(3)
+
+  creator Creator    @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  asset   MediaAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@unique([creatorId, assetId])
+  @@unique([creatorId, seq])
+  @@map("gallery_items")
 }
 
 /// A user's request to become a creator (US-010). History is kept: a rejected request is never edited,
@@ -146,12 +276,101 @@ model Subscription {
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  customer User    @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  creator  Creator @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  customer User                @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  creator  Creator             @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  events   SubscriptionEvent[]
 
   @@unique([customerId, creatorId])
   @@index([customerId])
+  @@index([creatorId, endsAt])
   @@map("subscriptions")
+}
+
+/// Append-only history of access changes (US-020); a DB trigger rejects UPDATE and DELETE.
+model SubscriptionEvent {
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionId String                @map("subscription_id") @db.Uuid
+  type           SubscriptionEventType
+  adminId        String                @map("admin_id") @db.Uuid
+  /// 1–300 characters (CHECK in the migration).
+  reason         String
+  /// The audit entry of the same action (written first, in the same transaction); NULL on older events.
+  auditLogId     String?               @map("audit_log_id") @db.Uuid
+  previousEndsAt DateTime?             @map("previous_ends_at") @db.Timestamptz(3)
+  newEndsAt      DateTime?             @map("new_ends_at") @db.Timestamptz(3)
+  /// GRANT only.
+  startsAt       DateTime?             @map("starts_at") @db.Timestamptz(3)
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  subscription   Subscription    @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  admin          AdminAccount    @relation(fields: [adminId], references: [id], onDelete: Restrict)
+  accessRequests AccessRequest[]
+
+  @@index([subscriptionId, createdAt, id])
+  @@map("subscription_events")
+}
+
+/// One private conversation per customer–creator pair. Minimal on purpose: created by the first
+/// access grant (US-020); the chat stories (Phase C) extend it.
+model Conversation {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId      String           @map("customer_id") @db.Uuid
+  creatorId       String           @map("creator_id") @db.Uuid
+  mode            ConversationMode @default(MANUAL)
+  responseVersion Int              @default(0) @map("response_version")
+  /// Last `messages.seq` handed out; incremented under the row lock, so sends are serialized per conversation.
+  lastMessageSeq  Int              @default(0) @map("last_message_seq")
+  /// When the newest message was committed (set in the same transaction as the message); null while empty.
+  lastMessageAt   DateTime?        @map("last_message_at") @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  customer    User               @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  creator     Creator            @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  messages    Message[]
+  reads       ConversationRead[]
+  mediaAssets MediaAsset[]
+
+  @@unique([customerId, creatorId])
+  @@index([creatorId])
+  @@map("conversations")
+}
+
+/// Each participant's read cursor in a conversation (US-028 reads it for unread counts; US-030 moves it).
+model ConversationRead {
+  conversationId String   @map("conversation_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  lastReadSeq    Int      @default(0) @map("last_read_seq")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([conversationId, userId])
+  @@map("conversation_reads")
+}
+
+/// A chat message (US-026). Text only until Phase D. `seq` is per conversation; the pair
+/// (sender, client_message_id) makes a retried send return the same row.
+model Message {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId  String        @map("conversation_id") @db.Uuid
+  senderUserId    String        @map("sender_user_id") @db.Uuid
+  type            MessageType   @default(TEXT)
+  origin          MessageOrigin @default(MANUAL)
+  /// Null only for a MEDIA message without text (CHECK in the migration).
+  body            String?
+  clientMessageId String        @map("client_message_id") @db.Uuid
+  seq             Int
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  conversation Conversation        @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  sender       User                @relation(fields: [senderUserId], references: [id], onDelete: Restrict)
+  attachments  MessageAttachment[]
+
+  @@unique([conversationId, seq])
+  @@unique([conversationId, senderUserId, clientMessageId])
+  @@map("messages")
 }
 
 /// Belongs to exactly one user OR one admin (CHECK constraint in the migration).
@@ -198,4 +417,117 @@ model AuditLog {
   @@index([createdAt])
   @@index([targetType, targetId])
   @@map("audit_logs")
+}
+
+/// Durable hand-off of a committed business event to a job (brief §14). US-012 only writes events
+/// (in the business transaction); the dispatcher, reconciler and workers come with US-013.
+/// `payload` holds ids and codes only, never free text such as a rejection reason.
+model OutboxEvent {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                String
+  aggregateType       String            @map("aggregate_type")
+  aggregateId         String            @map("aggregate_id") @db.Uuid
+  payload             Json
+  /// One event per business fact: a repeat write with the same key is ignored.
+  dedupeKey           String            @unique @map("dedupe_key")
+  status              OutboxEventStatus @default(PENDING)
+  availableAt         DateTime          @default(now()) @map("available_at") @db.Timestamptz(3)
+  attempts            Int               @default(0)
+  processedAt         DateTime?         @map("processed_at") @db.Timestamptz(3)
+  /// When the dispatcher handed it to the queue.
+  enqueuedAt          DateTime?         @map("enqueued_at") @db.Timestamptz(3)
+  /// When the realtime publisher emitted the socket signal (US-031); NULL = still to emit. Independent of `status`.
+  realtimePublishedAt DateTime?         @map("realtime_published_at") @db.Timestamptz(3)
+  /// A short code (never free text or a Telegram error message).
+  lastError           String?           @map("last_error")
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  deliveries NotificationDelivery[]
+
+  @@index([status, availableAt])
+  @@map("outbox_events")
+}
+
+/// One Telegram message for one business fact (US-013). Retries and backoff live here and on the
+/// outbox event, not in the queue. Never holds message text, a reason or a Telegram error message.
+model NotificationDelivery {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// e.g. creator_application:<id>:decision:telegram
+  dedupeKey         String             @unique @map("dedupe_key")
+  outboxEventId     String             @map("outbox_event_id") @db.Uuid
+  userId            String             @map("user_id") @db.Uuid
+  kind              String
+  status            NotificationStatus @default(PENDING)
+  attempts          Int                @default(0)
+  /// Sends that timed out or crashed mid-flight: the message may have been delivered anyway.
+  ambiguousAttempts Int                @default(0) @map("ambiguous_attempts")
+  telegramMessageId BigInt?            @map("telegram_message_id")
+  lastErrorCode     String?            @map("last_error_code")
+  claimedAt         DateTime?          @map("claimed_at") @db.Timestamptz(3)
+  sentAt            DateTime?          @map("sent_at") @db.Timestamptz(3)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  outboxEvent OutboxEvent @relation(fields: [outboxEventId], references: [id], onDelete: Restrict)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([status, claimedAt])
+  @@map("notification_deliveries")
+}
+
+enum AccessRequestType {
+  TRIAL
+  RENEWAL
+}
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A customer's request for trial or renewal access to a creator (US-022 reads it, US-023 writes it).
+/// One PENDING row per (customer, creator) is enforced by a partial unique index in the migration,
+/// and a CHECK ties the review fields to the status.
+model AccessRequest {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId          String              @map("customer_id") @db.Uuid
+  creatorId           String              @map("creator_id") @db.Uuid
+  type                AccessRequestType
+  status              AccessRequestStatus @default(PENDING)
+  reviewedByAdminId   String?             @map("reviewed_by_admin_id") @db.Uuid
+  reviewedAt          DateTime?           @map("reviewed_at") @db.Timestamptz(3)
+  /// 1–300 characters when present (CHECK in the migration).
+  reviewReason        String?             @map("review_reason")
+  /// The access event an approval produced (US-024); NULL unless APPROVED (CHECK in the migration).
+  subscriptionEventId String?             @map("subscription_event_id") @db.Uuid
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  customer   User               @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  creator    Creator            @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  reviewedBy AdminAccount?      @relation(fields: [reviewedByAdminId], references: [id], onDelete: Restrict)
+  event      SubscriptionEvent? @relation(fields: [subscriptionEventId], references: [id], onDelete: Restrict)
+
+  @@index([subscriptionEventId])
+  @@index([creatorId, status, createdAt])
+  @@index([customerId, createdAt])
+  @@map("access_requests")
+}
+
+/// A media message's file (US-036): the same asset a gallery item may point to, or a chat-only upload.
+/// Removing a message or an asset that is referenced here is refused (RESTRICT).
+model MessageAttachment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  position  Int      @default(0) @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  message Message    @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  asset   MediaAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@unique([messageId, position])
+  @@index([assetId])
+  @@map("message_attachments")
 }

@@ -1,6 +1,6 @@
 # US-013: Bot sends the creator request result
 
-**Status:** backlog
+**Status:** ready_for_uat
 **Priority:** medium
 **Feature:** creator-applications
 **Phase:** B
@@ -19,3 +19,20 @@ As a user who asked to become a creator, I want the bot to tell me the result in
 - [ ] Delivery is idempotent: a dedupe key per decision means a re-run or duplicate job never sends twice when the first send is known to have succeeded. Ambiguous Telegram timeouts are recorded as such, not claimed as exactly-once.
 - [ ] Telegram `429 retry_after` is honored with backoff; a user who blocked the bot (403) is marked and not retried forever. A failed notification never rolls back or hides the approval/rejection.
 - [ ] Tests use a fake Telegram sender (no real bot calls) and cover: one message per decision, duplicate job, reconciler pick-up after a simulated crash, 429 then success, 403 blocked bot. Logs contain no bot token or message text beyond what's safe.
+
+## Tasks
+
+### TASK-076: Notification schema and message copy
+**Status:** done
+
+### TASK-077: Outbox dispatcher and reconciler
+**Status:** done
+
+### TASK-078: `CreatorResultNotifier` and the Telegram sender port
+**Status:** done
+
+### TASK-079: Worker wiring (BullMQ, grammY sender, loops)
+**Status:** done
+
+### TASK-080: `/start` clears the bot-blocked flag
+**Status:** done

@@ -4,6 +4,7 @@ import type {
   SubmitCreatorRequestData,
 } from '@creatorchat/contracts';
 import type { PrismaClient } from '@creatorchat/db';
+import { findSubscriptionBlock } from './subscription-block.js';
 
 /** The account is not an ACTIVE USER (blocked, promoted, or gone): nothing was written. */
 export class CreatorRequestAccountNotActiveError extends Error {
@@ -54,19 +55,10 @@ export function toCreatorApplication(row: ApplicationRow): CreatorApplication {
 
 type Db = Pick<PrismaClient, 'creatorApplication' | 'subscription'>;
 
-/**
- * The subscription that stops a user from applying: not revoked and not yet ended, so both
- * active and future ones count. With several, the one that ends last decides when they may apply.
- */
+/** What a new request (and the approval re-check) shows: the creator and when access ends. */
 async function findBlock(db: Db, userId: string, now: Date): Promise<CreatorRequestBlock | null> {
-  const row = await db.subscription.findFirst({
-    where: { customerId: userId, revokedAt: null, endsAt: { gt: now } },
-    orderBy: { endsAt: 'desc' },
-    select: { endsAt: true, creator: { select: { user: { select: { displayName: true } } } } },
-  });
-  return row
-    ? { creator_name: row.creator.user.displayName, ends_at: row.endsAt.toISOString() }
-    : null;
+  const block = await findSubscriptionBlock(db, userId, now);
+  return block ? { creator_name: block.creator_name, ends_at: block.ends_at } : null;
 }
 
 /**

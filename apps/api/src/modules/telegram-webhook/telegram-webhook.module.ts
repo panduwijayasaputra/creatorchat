@@ -5,6 +5,7 @@ import { isTelegramWebhookConfigured, type ServerEnv } from '@creatorchat/backen
 import { ErrorCode } from '@creatorchat/contracts';
 import type { Bot } from 'grammy';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { PrismaService } from '../../common/infra/prisma.service.js';
 import { ENV } from '../../common/infra/tokens.js';
 import { createTelegramBot } from './telegram-bot.factory.js';
 import { TELEGRAM_BOT, TELEGRAM_WEBHOOK_SECRET } from './tokens.js';
@@ -45,8 +46,8 @@ function reject(request: FastifyRequest, reply: FastifyReply, status: 401 | 503)
     },
     {
       provide: TELEGRAM_BOT,
-      inject: [ENV],
-      useFactory: (env: ServerEnv): Bot | null => {
+      inject: [ENV, PrismaService],
+      useFactory: (env: ServerEnv, prisma: PrismaService): Bot | null => {
         if (!isTelegramWebhookConfigured(env)) return null;
         const logger = new Logger('TelegramWebhook');
         return createTelegramBot({
@@ -57,6 +58,13 @@ function reject(request: FastifyRequest, reply: FastifyReply, status: 401 | 503)
           ...(env.NODE_ENV === 'test' && process.env.TEST_BOT_API_ROOT
             ? { apiRoot: process.env.TEST_BOT_API_ROOT }
             : {}),
+          // /start proves the user can receive bot messages again: clear a recorded block.
+          onStart: async (telegramId) => {
+            await prisma.client.user.updateMany({
+              where: { telegramId, botBlockedAt: { not: null } },
+              data: { botBlockedAt: null },
+            });
+          },
           onError: (name) => logger.error(`update handler failed: ${name}`),
         });
       },

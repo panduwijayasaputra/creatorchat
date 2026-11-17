@@ -2,6 +2,9 @@ import { EnvError, loadEnv } from '@creatorchat/backend-core';
 import { createPrismaClient } from '@creatorchat/db';
 import { Redis } from 'ioredis';
 import { createLogger } from './logger.js';
+import { startMedia } from './media/media.js';
+import { startNotifications } from './notifications.js';
+import { startRealtime } from './realtime.js';
 import { createWorker } from './worker.js';
 
 async function main(): Promise<void> {
@@ -24,12 +27,19 @@ async function main(): Promise<void> {
   });
   redis.on('error', () => undefined); // surfaced through the dependency probe instead
 
+  const notifications = startNotifications({ env, prisma, logger });
+  const realtime = startRealtime({ env, prisma, logger });
+  const media = await startMedia({ env, prisma, logger });
+
   const worker = createWorker({
     env,
     logger,
     pingDb: () => prisma.$queryRaw`SELECT 1`,
     pingRedis: () => redis.ping(),
     close: async () => {
+      await notifications?.stop();
+      await realtime.stop();
+      await media?.stop();
       redis.disconnect();
       await prisma.$disconnect();
     },

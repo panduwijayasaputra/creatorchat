@@ -7,6 +7,8 @@ export interface IntegrationStatus {
   /** Bot webhook: token, username, webhook secret (>= 32 chars) and Mini App URL are all present. */
   telegramWebhook: IntegrationState;
   r2: IntegrationState;
+  /** Media storage: the local dev driver (with its signing secret), the R2 bucket, or neither. */
+  storage: 'local' | 'r2' | 'unconfigured';
   ai: IntegrationState;
   /** Active AI provider name (e.g. `fake`); never a credential. */
   aiProvider: string;
@@ -39,11 +41,20 @@ export function getIntegrationStatus(env: ServerEnv): IntegrationStatus {
   const r2 = Boolean(
     env.R2_ACCOUNT_ENDPOINT && env.R2_BUCKET && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY,
   );
+  const storage =
+    env.STORAGE_DRIVER === 'r2'
+      ? r2
+        ? 'r2'
+        : 'unconfigured'
+      : env.STORAGE_LOCAL_SIGNING_SECRET
+        ? 'local'
+        : 'unconfigured';
   const ai = env.AI_PROVIDER !== 'fake' && Boolean(env.AI_API_KEY);
   return {
     telegram: telegram ? 'configured' : 'unconfigured',
     telegramWebhook: telegramWebhook ? 'configured' : 'unconfigured',
     r2: r2 ? 'configured' : 'unconfigured',
+    storage,
     ai: ai ? 'configured' : 'unconfigured',
     aiProvider: env.AI_PROVIDER,
   };

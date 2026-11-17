@@ -7,14 +7,16 @@ import '@creatorchat/ui/tokens.css';
 import '@creatorchat/ui/base.css';
 import { createMiniappApi } from './auth/api-client';
 import { createMiniappRoutes } from './app/routes';
+import { createSocketFactory } from './realtime/socket';
 import { browserTelegram } from './telegram/webapp';
 
 async function bootstrap(): Promise<void> {
   // Development only: `?tgdev=<initData>` fakes the Telegram WebApp. The import is removed from
   // production builds (checked by `pnpm build`), and the API validates the signature either way.
   if (import.meta.env.DEV) {
-    const { installDevInitData } = await import('./telegram/dev-init-data');
-    installDevInitData();
+    const { installDevInitData, installServerDevInitData } =
+      await import('./telegram/dev-init-data');
+    if (!installDevInitData()) await installServerDevInitData();
   }
 
   // The component preview is development-only; the dynamic import is removed from production builds.
@@ -27,11 +29,14 @@ async function bootstrap(): Promise<void> {
       ]
     : [];
 
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
   const api = createMiniappApi({
-    baseUrl: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000',
+    baseUrl,
     getInitData: () => browserTelegram.getInitData(),
   });
-  const router = createBrowserRouter(createMiniappRoutes({ api, extraRoutes }));
+  const router = createBrowserRouter(
+    createMiniappRoutes({ api, realtime: createSocketFactory(baseUrl), extraRoutes }),
+  );
 
   const root = document.getElementById('root');
   if (root) {

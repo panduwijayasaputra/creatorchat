@@ -1,0 +1,91 @@
+/* Values from designs/.../html/AdmUserSummary.html, AdmUserBlocked.html, AdmUserRequest.html, AdmReqDetail*.html. Shared card / row / header styles come from the creator detail. */
+.threeCols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.twoColsReq {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.banner {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 20px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bannerBlocked {
+  background: var(--err-bg);
+}
+
+.bannerPending {
+  background: #f5dce5;
+}
+
+.bannerIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.bannerTitle {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.bannerText {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.chipRow {
+  margin-top: 10px;
+}
+
+.buttonRow {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.noteWarn {
+  background: var(--err-bg);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  color: var(--rose);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.footerNote {
+  margin-top: 16px;
+}
+
+@media (max-width: 1279px) {
+  .threeCols,
+  .twoColsReq {
+    grid-template-columns: 1fr;
+  }
+}

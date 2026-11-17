@@ -45,7 +45,14 @@ function setup(handler: Handler, initData: string | null = 'query_id=x&hash=y') 
 const authHeader = (init: RequestInit) => (init.headers as Record<string, string>).authorization;
 
 describe('createMiniappApi.resolveCreator', () => {
-  const creator = { public_code: 'k4m5x2qa', display_name: 'Salsa', bio: null, avatar_url: null };
+  const creator = {
+    public_code: 'k4m5x2qa',
+    display_name: 'Salsa',
+    bio: null,
+    avatar_url: null,
+    conversation_id: null,
+    access: { state: 'GUEST' },
+  };
 
   it('sends the Bearer token to the encoded by-code path and parses the public fields', async () => {
     const { api, calls } = setup((url) =>
@@ -85,6 +92,159 @@ describe('createMiniappApi.resolveCreator', () => {
     );
     await api.loginWithTelegram('a=1&hash=2');
     await expect(api.resolveCreator('k4m5x2qa')).rejects.toThrow();
+  });
+});
+
+describe('createMiniappApi.requestAccess (US-023)', () => {
+  const ok = { request_type: 'TRIAL', requested_at: '2026-11-17T03:00:00.000Z' };
+
+  it('POSTs with the Bearer token and no body to the encoded path and validates the answer', async () => {
+    const { api, calls } = setup((url) =>
+      url.endsWith('/v1/auth/telegram') ? json(200, loginBody('tok-1')) : json(201, ok),
+    );
+    await api.loginWithTelegram('a=1&hash=2');
+    expect(await api.requestAccess('k4m5x2qa')).toEqual(ok);
+    expect(calls[1]?.url).toBe('http://api.test/v1/creators/by-code/k4m5x2qa/access-requests');
+    expect(calls[1]?.init.method).toBe('POST');
+    expect(calls[1]?.init.body).toBeUndefined();
+    expect(authHeader(calls[1]?.init ?? {})).toBe('Bearer tok-1');
+  });
+
+  it('surfaces 409 and 404 as ApiError with the server code, and refuses extra fields', async () => {
+    const { api } = setup((url) => {
+      if (url.endsWith('/v1/auth/telegram')) return json(200, loginBody('t'));
+      if (url.includes('aaaaaaaa')) return json(409, errorBody('ACCESS_ALREADY_ACTIVE'));
+      if (url.includes('zzzzzzzz')) return json(404, errorBody('CREATOR_NOT_FOUND'));
+      return json(200, { ...ok, id: 'x' });
+    });
+    await api.loginWithTelegram('a=1&hash=2');
+    await expect(api.requestAccess('aaaaaaaa')).rejects.toMatchObject({
+      code: 'ACCESS_ALREADY_ACTIVE',
+      status: 409,
+    });
+    await expect(api.requestAccess('zzzzzzzz')).rejects.toMatchObject({ status: 404 });
+    await expect(api.requestAccess('k4m5x2qa')).rejects.toThrow();
+  });
+});
+
+describe('createMiniappApi chat list (US-027)', () => {
+  const row = {
+    conversation_id: '0d9b6f0e-7f0c-4a53-9d0c-2b3b5c1a9e33',
+    public_code: 'salsa234',
+    display_name: 'Salsa',
+    avatar_url: null,
+    last_message: { preview: 'Halo', at: '2026-11-17T02:14:00.000Z', media_kind: null },
+    unread_count: 2,
+    access: 'ACTIVE',
+  };
+
+  it('GETs the list with the Bearer token, the limit and the cursor, and validates the answer', async () => {
+    const { api, calls } = setup((url) =>
+      url.endsWith('/v1/auth/telegram')
+        ? json(200, loginBody('tok-1'))
+        : json(200, { items: [row], next_cursor: 'abc' }),
+    );
+    await api.loginWithTelegram('a=1&hash=2');
+    expect((await api.listChats({ limit: 20 })).next_cursor).toBe('abc');
+    await api.listChats({ limit: 10, cursor: 'a b/c' });
+    expect(calls[1]?.url).toBe('http://api.test/v1/chats?limit=20');
+    expect(calls[2]?.url).toBe('http://api.test/v1/chats?limit=10&cursor=a+b%2Fc');
+    expect(calls[1]?.init.method).toBe('GET');
+    expect(authHeader(calls[1]?.init ?? {})).toBe('Bearer tok-1');
+  });
+
+  it('refuses extra fields and surfaces a 403 as ApiError', async () => {
+    let n = 0;
+    const { api } = setup((url) => {
+      if (url.endsWith('/v1/auth/telegram')) return json(200, loginBody('t'));
+      return n++ === 0
+        ? json(200, { items: [{ ...row, creator_id: 'x' }], next_cursor: null })
+        : json(403, errorBody('FORBIDDEN_ROLE'));
+    });
+    await api.loginWithTelegram('a=1&hash=2');
+    await expect(api.listChats({ limit: 20 })).rejects.toThrow();
+    await expect(api.listChats({ limit: 20 })).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('reads the unread total and refuses anything else', async () => {
+    let n = 0;
+    const { api, calls } = setup((url) => {
+      if (url.endsWith('/v1/auth/telegram')) return json(200, loginBody('t'));
+      return n++ === 0 ? json(200, { unread_total: 7 }) : json(200, { unread_total: -1 });
+    });
+    await api.loginWithTelegram('a=1&hash=2');
+    expect((await api.getChatUnread()).unread_total).toBe(7);
+    expect(calls[1]?.url).toBe('http://api.test/v1/chats/unread');
+    await expect(api.getChatUnread()).rejects.toThrow();
+  });
+});
+
+describe('createMiniappApi.listSubscriptions (US-025)', () => {
+  const item = {
+    public_code: 'k4m5x2qa',
+    display_name: 'Salsa',
+    avatar_url: null,
+    access: { state: 'ACTIVE', ends_at: '2026-11-27T16:59:59.000Z' },
+    creator_available: true,
+    conversation_id: null,
+  };
+
+  it('GETs with the Bearer token and no body and validates the answer', async () => {
+    const { api, calls } = setup((url) =>
+      url.endsWith('/v1/auth/telegram')
+        ? json(200, loginBody('tok-1'))
+        : json(200, { items: [item] }),
+    );
+    await api.loginWithTelegram('a=1&hash=2');
+    expect((await api.listSubscriptions()).items).toEqual([item]);
+    expect(calls[1]?.url).toBe('http://api.test/v1/subscriptions');
+    expect(calls[1]?.init.method).toBe('GET');
+    expect(authHeader(calls[1]?.init ?? {})).toBe('Bearer tok-1');
+  });
+
+  it('refuses extra fields and surfaces a 403 as ApiError', async () => {
+    let n = 0;
+    const { api } = setup((url) => {
+      if (url.endsWith('/v1/auth/telegram')) return json(200, loginBody('t'));
+      return n++ === 0
+        ? json(200, { items: [{ ...item, id: 'x' }] })
+        : json(403, errorBody('FORBIDDEN_ROLE'));
+    });
+    await api.loginWithTelegram('a=1&hash=2');
+    await expect(api.listSubscriptions()).rejects.toThrow();
+    await expect(api.listSubscriptions()).rejects.toMatchObject({
+      code: 'FORBIDDEN_ROLE',
+      status: 403,
+    });
+  });
+});
+
+describe('createMiniappApi.listCreators (US-022)', () => {
+  const page = { items: [], total: 0, page: 2, page_size: 10 };
+
+  it('sends the Bearer token with page and page_size and validates the answer', async () => {
+    const { api, calls } = setup((url) =>
+      url.endsWith('/v1/auth/telegram') ? json(200, loginBody('tok-1')) : json(200, page),
+    );
+    await api.loginWithTelegram('a=1&hash=2');
+    expect(await api.listCreators({ page: 2, page_size: 10 })).toEqual(page);
+    expect(calls[1]?.url).toBe('http://api.test/v1/creators?page=2&page_size=10');
+    expect(authHeader(calls[1]?.init ?? {})).toBe('Bearer tok-1');
+  });
+
+  it('rejects a response with extra fields and surfaces a 403 as ApiError', async () => {
+    const { api } = setup((url) => {
+      if (url.endsWith('/v1/auth/telegram')) return json(200, loginBody('t'));
+      return url.includes('page=9')
+        ? json(403, errorBody('FORBIDDEN_ROLE'))
+        : json(200, { ...page, media: [] });
+    });
+    await api.loginWithTelegram('a=1&hash=2');
+    await expect(api.listCreators({ page: 1, page_size: 20 })).rejects.toThrow();
+    await expect(api.listCreators({ page: 9, page_size: 20 })).rejects.toMatchObject({
+      code: 'FORBIDDEN_ROLE',
+      status: 403,
+    });
   });
 });
 
@@ -400,5 +560,30 @@ describe('createMiniappApi creator request calls', () => {
       code: 'CREATOR_REQUEST_BLOCKED',
       details,
     });
+  });
+});
+
+describe('createMiniappApi realtime token (US-031)', () => {
+  it('has no token before login, then exposes the current one and swaps it on renewal', async () => {
+    let n = 0;
+    const { api } = setup(() => json(200, loginBody(`tok-${++n}`)));
+    expect(api.getAccessToken()).toBeNull();
+    await api.loginWithTelegram('query_id=x&hash=y');
+    expect(api.getAccessToken()).toBe('tok-1');
+    expect(await api.renewAccessToken()).toBe('tok-2');
+    expect(api.getAccessToken()).toBe('tok-2');
+  });
+
+  it('reports a lost session as null, and a network failure as NetworkError', async () => {
+    const lost: SessionLossReason[] = [];
+    const a = setup(() => json(401, errorBody('UNAUTHENTICATED')), null);
+    a.api.onSessionLost((r) => lost.push(r));
+    expect(await a.api.renewAccessToken()).toBeNull();
+    expect(lost).toHaveLength(1);
+
+    const b = setup(() => {
+      throw new TypeError('offline');
+    });
+    await expect(b.api.renewAccessToken()).rejects.toBeInstanceOf(NetworkError);
   });
 });

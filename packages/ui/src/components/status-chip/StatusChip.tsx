@@ -18,6 +18,7 @@ export type ChipStatus =
   | 'success'
   | 'failed'
   | 'expired'
+  | 'revoked'
   | 'rejected'
   | 'pending'
   | 'none';
@@ -36,6 +37,8 @@ export const CHIP_SPECS: Record<ChipStatus, ChipSpec> = {
   success: { label: 'Berhasil', Icon: CheckCircleIcon, tone: 'ok' },
   failed: { label: 'Gagal', Icon: AlertCircleIcon, tone: 'err' },
   expired: { label: 'Kedaluwarsa', Icon: ClockIcon, tone: 'exp' },
+  // `AdmUserSubsRevoked`: the same neutral tone and clock as Kedaluwarsa, its own label.
+  revoked: { label: 'Dicabut', Icon: ClockIcon, tone: 'exp' },
   rejected: { label: 'Ditolak', Icon: XIcon, tone: 'err' },
   pending: { label: 'Menunggu', Icon: HourglassIcon, tone: 'warn' },
   none: { label: 'Belum mengajukan', Icon: InfoCircleIcon, tone: 'soft' },

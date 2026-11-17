@@ -1,0 +1,235 @@
+/* Values from designs/.../html/CrViewerPhoto.html and CrViewerVideo.html (390 x 844). */
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #1b1418;
+  color: #fff;
+}
+
+.top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.round {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.position {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.spacer {
+  width: 44px;
+}
+
+.media {
+  position: absolute;
+  top: 80px;
+  left: 0;
+  right: 0;
+  height: 487px;
+  background: #1b1418;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  margin-top: -22px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(27, 20, 24, 0.72);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.prev {
+  left: 12px;
+}
+
+.next {
+  right: 12px;
+}
+
+.controls {
+  position: absolute;
+  /* 587 px on the board is measured from the screen; this box starts at 80 px. */
+  top: 507px;
+  left: 0;
+  right: 0;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.play {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #30252c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.seek {
+  flex: 1;
+  min-width: 0;
+}
+
+.trackRow {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.fill {
+  height: 4px;
+  border-radius: 2px;
+  background: #f5dce5;
+}
+
+.knob {
+  position: absolute;
+  top: -5px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  line-height: 16px;
+  color: #fff;
+}
+
+.footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px 20px 34px;
+  font-size: 13px;
+  line-height: 18px;
+  color: #d9c9d1;
+}
+
+.round:focus-visible,
+.nav:focus-visible,
+.play:focus-visible,
+.trackRow:focus-within {
+  outline: 2px solid #f5dce5;
+  outline-offset: 2px;
+}
+
+.panel {
+  padding: 0 32px;
+  text-align: center;
+}
+
+.panelText {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 22px;
+  color: #d9c9d1;
+}
+
+.panelButton {
+  height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  background: #fff;
+  color: #30252c;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The chat viewer's footer (MediaPhoto / MediaVideo): creator avatar, the message, who and when. */
+.chatFooter {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.chatFooterTitle {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.chatFooterMeta {
+  font-size: 13px;
+  line-height: 18px;
+  color: #d9c9d1;
+}

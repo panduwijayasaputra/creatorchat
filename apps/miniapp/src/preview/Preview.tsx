@@ -1,6 +1,7 @@
 import {
   Avatar,
   Button,
+  GalleryTile,
   HourglassIcon,
   RefreshIcon,
   SearchInput,
@@ -79,6 +80,21 @@ export function Preview() {
         </Card>
         <Card id="inputs" title="Input">
           <SearchInput large aria-label="Cari nama creator" placeholder="Cari nama creator" />
+        </Card>
+        <Card id="gallery-tile" title="Tile galeri">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 110px)', gap: 8 }}>
+            <GalleryTile state="ready" kind="PHOTO" thumbnailUrl={null} label="Foto" />
+            <GalleryTile
+              state="ready"
+              kind="VIDEO"
+              thumbnailUrl={null}
+              durationSeconds={48}
+              label="Video"
+            />
+            <GalleryTile state="ready" kind="PHOTO" thumbnailUrl={null} isNew label="Foto baru" />
+            <GalleryTile state="uploading" progress={64} />
+            <GalleryTile state="failed" onRetry={() => undefined} />
+          </div>
         </Card>
         <Card id="bottom-nav" title="Bottom navigation">
           <div className={styles.navFrame} data-preview-section="bottom-nav-customer">

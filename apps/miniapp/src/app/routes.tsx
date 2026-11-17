@@ -3,14 +3,29 @@ import { AuthProvider, type SeenFlag } from '../auth/AuthProvider';
 import type { MiniappApi } from '../auth/api-client';
 import { LandingRedirect, RequireRole, RequireSession } from '../auth/guards';
 import type { TelegramEnv } from '../telegram/webapp';
+import { ChatPage } from '../chat/ChatPage';
+import { ChatMediaViewer } from '../chat/ChatMediaViewer';
 import { CreatorLinkPage } from '../creator-link/CreatorLinkPage';
+import { CustomerGalleryViewer } from '../creator-link/CustomerGalleryViewer';
 import { HealthStatus } from '../components/HealthStatus';
+import { GalleryPage } from '../gallery/GalleryPage';
+import { GalleryViewer } from '../gallery/GalleryViewer';
 import { NotImplemented } from '../components/NotImplemented';
 import { CreatorEditProfilePage } from '../creator/CreatorEditProfilePage';
 import { CreatorSettingsPage } from '../creator/CreatorSettingsPage';
 import { CreatorTimezonePage } from '../creator/CreatorTimezonePage';
 import { CreatorRequestPage, REQUEST_STATUS_PATH } from '../profile/CreatorRequestPage';
+import { CreatorRequestStatusPage } from '../profile/CreatorRequestStatusPage';
 import { EditProfilePage } from '../profile/EditProfilePage';
+import { CreatorChatPage } from '../creator-chat/CreatorChatPage';
+import { CreatorCustomerPage } from '../creator-chat/CreatorCustomerPage';
+import { InboxPage } from '../inbox/InboxPage';
+import { ChatListPage } from '../chats/ChatListPage';
+import { UnreadProvider } from '../chats/UnreadProvider';
+import { RealtimeProvider } from '../realtime/RealtimeProvider';
+import type { RealtimeFactory } from '../realtime/types';
+import { ExplorePage } from '../explore/ExplorePage';
+import { SubscriptionsPage } from '../subscriptions/SubscriptionsPage';
 import { ProfilePage } from '../profile/ProfilePage';
 import { CreatorShell, CustomerShell } from '../components/shell/Shells';
 import { CREATOR_NAV, CUSTOMER_NAV, type NavEntry } from './nav-config';
@@ -23,6 +38,8 @@ export interface MiniappRoutesOptions {
   seen?: SeenFlag;
   /** No data source yet: the chat stories feed the real unread count. */
   unreadCount?: number;
+  /** The socket factory (US-031); without it nothing connects, which is what most tests want. */
+  realtime?: RealtimeFactory;
   /** Extra routes outside the shells (e.g. the dev-only component preview). */
   extraRoutes?: RouteObject[];
 }
@@ -53,13 +70,18 @@ export function createMiniappRoutes({
   telegram,
   seen,
   unreadCount,
+  realtime,
   extraRoutes = [],
 }: MiniappRoutesOptions): RouteObject[] {
   return [
     {
       element: (
         <AuthProvider api={api} {...(telegram ? { telegram } : {})} {...(seen ? { seen } : {})}>
-          <Outlet />
+          <RealtimeProvider api={api} factory={realtime}>
+            <UnreadProvider api={api}>
+              <Outlet />
+            </UnreadProvider>
+          </RealtimeProvider>
         </AuthProvider>
       ),
       children: [
@@ -68,18 +90,42 @@ export function createMiniappRoutes({
           children: [
             { path: '/', element: <LandingRedirect /> },
             // Deep-link landing (US-005): the path survives login; the server resolves the code.
-            { path: '/creators/:publicCode', element: <CreatorLinkPage api={api} /> },
+            {
+              path: '/creators/:publicCode',
+              element: <CreatorLinkPage api={api} />,
+              // The subscriber's viewer is drawn over the profile, which stays mounted underneath.
+              children: [
+                { path: 'gallery/:assetId', element: <CustomerGalleryViewer api={api} /> },
+              ],
+            },
             {
               element: <RequireRole role="USER" />,
               children: [
                 {
                   element: <CustomerShell unreadCount={unreadCount} />,
                   children: [
-                    // Profile is real (US-007); the other customer tabs are still placeholders.
+                    // Profile (US-007), Explore (US-022) and Langganan (US-025) and the chat list (US-027) are real; the other customer tabs are still placeholders.
                     ...CUSTOMER_NAV.flatMap((entry, index) =>
-                      entry.to === '/profile' ? [] : [placeholder(entry, index === 0)],
+                      entry.to === '/profile' ||
+                      entry.to === '/explore' ||
+                      entry.to === '/subscriptions' ||
+                      entry.to === '/chats'
+                        ? []
+                        : [placeholder(entry, index === 0)],
                     ),
+                    { path: 'chats', element: <ChatListPage api={api} /> },
+                    { path: 'explore', element: <ExplorePage api={api} /> },
+                    { path: 'subscriptions', element: <SubscriptionsPage api={api} /> },
                     { path: 'profile', element: <ProfilePage api={api} /> },
+                  ],
+                },
+                // Full-screen private chat (US-026, no bottom navigation); `/chats` is the list (US-027).
+                {
+                  path: 'chats/:conversationId',
+                  element: <ChatPage api={api} />,
+                  // A received file opens in a viewer drawn over the conversation (US-037).
+                  children: [
+                    { path: 'media/:attachmentId', element: <ChatMediaViewer api={api} /> },
                   ],
                 },
                 // Full-screen pages under Profil (no bottom navigation).
@@ -89,9 +135,8 @@ export function createMiniappRoutes({
                 },
                 { path: 'profile/creator-request', element: <CreatorRequestPage api={api} /> },
                 {
-                  // US-011 builds the status screen; a submitted or pending request lands here.
                   path: REQUEST_STATUS_PATH.slice(1),
-                  element: <NotImplemented title="Status permintaan" />,
+                  element: <CreatorRequestStatusPage api={api} />,
                 },
               ],
             },
@@ -101,10 +146,20 @@ export function createMiniappRoutes({
                 {
                   element: <CreatorShell unreadCount={unreadCount} />,
                   children: [
-                    // Settings is real (US-008); the other creator tabs are still placeholders.
-                    ...CREATOR_NAV.filter((entry) => entry.to !== '/settings').map((entry) =>
-                      placeholder(entry),
-                    ),
+                    // Inbox (US-028) and Settings (US-008) are real; the other creator tabs are still placeholders.
+                    ...CREATOR_NAV.filter(
+                      (entry) =>
+                        entry.to !== '/settings' &&
+                        entry.to !== '/inbox' &&
+                        entry.to !== '/gallery',
+                    ).map((entry) => placeholder(entry)),
+                    { path: 'inbox', element: <InboxPage api={api} /> },
+                    {
+                      path: 'gallery',
+                      element: <GalleryPage api={api} />,
+                      // The viewer is drawn over the grid, which stays mounted underneath.
+                      children: [{ path: ':assetId', element: <GalleryViewer api={api} /> }],
+                    },
                     { path: 'settings', element: <CreatorSettingsPage api={api} /> },
                     // Rows owned by later stories (persona, welcome message, price).
                     ...LATER_SETTINGS.map(([path, title]) => ({
@@ -112,6 +167,12 @@ export function createMiniappRoutes({
                       element: <NotImplemented title={title} />,
                     })),
                   ],
+                },
+                // Full-screen conversation and customer detail (US-029, no bottom navigation).
+                { path: 'inbox/:conversationId', element: <CreatorChatPage api={api} /> },
+                {
+                  path: 'inbox/:conversationId/customer',
+                  element: <CreatorCustomerPage api={api} />,
                 },
                 // Full-screen page under Pengaturan (no bottom navigation).
                 { path: 'settings/profile', element: <CreatorEditProfilePage /> },

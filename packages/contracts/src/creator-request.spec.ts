@@ -5,6 +5,7 @@ import {
   INSTAGRAM_INVALID,
   RIGHTS_REQUIRED,
   SubmitCreatorRequestSchema,
+  instagramHandle,
   normalizeInstagramUrl,
 } from './creator-request.js';
 
@@ -125,5 +126,26 @@ describe('CreatorRequestStateResponseSchema', () => {
       request: null,
       blocked: null,
     });
+  });
+});
+
+describe('instagramHandle', () => {
+  it('shows the handle of a stored link', () => {
+    expect(instagramHandle('https://instagram.com/maya.lestari')).toBe('@maya.lestari');
+  });
+
+  it('accepts a trailing slash and www, and keeps the handle case', () => {
+    expect(instagramHandle('https://www.instagram.com/Maya_L/')).toBe('@Maya_L');
+  });
+
+  it('returns a value with another shape unchanged and never throws', () => {
+    for (const value of [
+      'https://example.com/maya',
+      'https://instagram.com/a/b',
+      'not a url',
+      '',
+    ]) {
+      expect(instagramHandle(value)).toBe(value);
+    }
   });
 });

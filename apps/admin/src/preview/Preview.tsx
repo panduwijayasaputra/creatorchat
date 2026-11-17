@@ -29,6 +29,7 @@ import {
   type PreviewCreatorRow,
 } from './fixtures';
 import styles from './preview.module.css';
+import { ReviewDialogsPreview } from './ReviewDialogsPreview';
 
 /** Development-only page: every shared component in its designed states (not a product screen). */
 export function Preview() {
@@ -57,6 +58,9 @@ export function Preview() {
           </Section>
           <Section id="toast-dialog" title="Toast dan dialog">
             <ToastAndDialogs />
+          </Section>
+          <Section id="creator-review" title="Dialog tinjau permintaan creator">
+            <ReviewDialogsPreview />
           </Section>
           <TableSections />
         </div>

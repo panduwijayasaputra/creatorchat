@@ -93,18 +93,150 @@ describe('seed', () => {
     expect(maya.displayName).toBe('Edited');
   });
 
-  it('gives Raka Putra one active subscription to Salsa, once', async () => {
+  it('gives Raka Putra the two board chats, once, with seq 1..n and the right senders', async () => {
     const first = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
-    expect(first.subscriptionsCreated).toBe(1);
+    expect(first.chatMessagesCreated).toBe(7);
+    const second = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(second.chatMessagesCreated).toBe(0);
+    const conversations = await prisma.conversation.findMany({
+      include: { messages: { orderBy: { seq: 'asc' } }, customer: true },
+    });
+    expect(conversations).toHaveLength(2);
+    for (const c of conversations) {
+      expect(c.messages.map((m) => m.seq)).toEqual(c.messages.map((_, i) => i + 1));
+      expect(c.lastMessageSeq).toBe(c.messages.length);
+      expect(c.lastMessageAt).toEqual(c.messages[c.messages.length - 1]!.createdAt);
+      expect(c.customer.displayName).toBe('Raka Putra');
+    }
+    const salsa = conversations.find((c) => c.messages.length === 3)!;
+    expect(salsa.messages.map((m) => m.senderUserId === salsa.customerId)).toEqual([
+      false,
+      true,
+      false,
+    ]);
+  });
+
+  it('gives Raka Putra read cursors so Salsa has 2 unread creator messages and Kirana none, once, never moved by a re-seed', async () => {
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    const reads = await prisma.conversationRead.findMany({
+      include: { conversation: { include: { messages: true, creator: true } } },
+    });
+    expect(reads).toHaveLength(2);
+    const unread = (r: (typeof reads)[number]) =>
+      r.conversation.messages.filter((m) => m.senderUserId !== r.userId && m.seq > r.lastReadSeq)
+        .length;
+    const byCode = new Map(reads.map((r) => [r.conversation.creator.publicCode, r]));
+    expect(unread(byCode.get('salsa234')!)).toBe(2);
+    expect(unread(byCode.get('kirana23')!)).toBe(0);
+    // a cursor that moved later is not reset by the next seed
+    await prisma.conversationRead.update({
+      where: {
+        conversationId_userId: {
+          conversationId: byCode.get('salsa234')!.conversationId,
+          userId: byCode.get('salsa234')!.userId,
+        },
+      },
+      data: { lastReadSeq: 3 },
+    });
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    const after = await prisma.conversationRead.findUniqueOrThrow({
+      where: {
+        conversationId_userId: {
+          conversationId: byCode.get('salsa234')!.conversationId,
+          userId: byCode.get('salsa234')!.userId,
+        },
+      },
+    });
+    expect(after.lastReadSeq).toBe(3);
+  });
+
+  it('gives Raka Putra an active subscription to Salsa and an expired one to Kirana, once', async () => {
+    const first = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(first.subscriptionsCreated).toBe(2);
     const second = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
     expect(second.subscriptionsCreated).toBe(0);
     const rows = await prisma.subscription.findMany({
       include: { customer: true, creator: { include: { user: true } } },
     });
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.customer.displayName === 'Raka Putra')).toBe(true);
+    const salsa = rows.find((r) => r.creator.user.displayName === 'Salsa');
+    expect(salsa?.endsAt.toISOString()).toBe('2026-11-27T00:00:00.000Z');
+    expect(salsa?.revokedAt).toBeNull();
+    const kirana = rows.find((r) => r.creator.user.displayName === 'Kirana');
+    expect(kirana?.endsAt.toISOString()).toBe('2026-11-06T00:00:00.000Z');
+  });
+
+  it('gives Maya and Raka one pending and Luna one rejected creator request, once', async () => {
+    const first = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(first.applicationsCreated).toBe(3);
+    const second = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(second.applicationsCreated).toBe(0);
+
+    const rows = await prisma.creatorApplication.findMany({ include: { user: true } });
+    expect(rows).toHaveLength(3);
+    const maya = rows.find((r) => r.user.displayName === 'Maya Lestari');
+    expect(maya).toMatchObject({ status: 'PENDING', reviewReason: null, reviewedAt: null });
+    const luna = rows.find((r) => r.user.displayName === 'Luna Aurora');
+    expect(luna).toMatchObject({ status: 'REJECTED', reviewedByAdminId: null });
+    expect(luna?.reviewReason).toMatch(/^Link Instagram belum bisa kami verifikasi/);
+    expect(luna?.reviewedAt?.toISOString()).toBe('2026-11-15T00:00:00.000Z');
+    const raka = rows.find((r) => r.user.displayName === 'Raka Putra');
+    expect(raka).toMatchObject({ status: 'PENDING', creatorName: 'Raka Putra' });
+  });
+
+  it('leaves an existing request of the same status untouched on re-run', async () => {
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    await prisma.creatorApplication.updateMany({
+      where: { status: 'PENDING', user: { telegramId: 9_000_000_011n } },
+      data: { creatorName: 'Edited' },
+    });
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(
+      await prisma.creatorApplication.count({
+        where: { status: 'PENDING', creatorName: 'Edited' },
+      }),
+    ).toBe(1);
+  });
+
+  it('gives the seed creators a type and an Instagram link, only when it creates them', async () => {
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    const salsa = await prisma.creator.findUniqueOrThrow({ where: { publicCode: 'salsa234' } });
+    expect(salsa).toMatchObject({
+      creatorType: 'HUMAN',
+      instagramUrl: 'https://instagram.com/salsa.maheswari',
+    });
+    await prisma.creator.update({
+      where: { publicCode: 'salsa234' },
+      data: { instagramUrl: null },
+    });
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    const again = await prisma.creator.findUniqueOrThrow({ where: { publicCode: 'salsa234' } });
+    expect(again.instagramUrl).toBeNull();
+  });
+
+  it("keeps Raka Putra's subscription next to his pending request", async () => {
+    await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    const raka = await prisma.user.findUniqueOrThrow({ where: { telegramId: 9_000_000_012n } });
+    expect(
+      await prisma.creatorApplication.count({ where: { userId: raka.id, status: 'PENDING' } }),
+    ).toBe(1);
+    expect(await prisma.subscription.count({ where: { customerId: raka.id } })).toBe(2);
+  });
+
+  it('gives Raka Putra one pending trial request to Dinda, once', async () => {
+    const first = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(first.accessRequestsCreated).toBe(1);
+    const second = await runSeed(prisma, { adminPassword: 'pw-pw-pw-pw-1' });
+    expect(second.accessRequestsCreated).toBe(0);
+    const rows = await prisma.accessRequest.findMany({
+      include: { customer: true, creator: { include: { user: true } } },
+    });
     expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ type: 'TRIAL', status: 'PENDING' });
     expect(rows[0]?.customer.displayName).toBe('Raka Putra');
-    expect(rows[0]?.creator.user.displayName).toBe('Salsa');
-    expect(rows[0]?.endsAt.toISOString()).toBe('2026-11-27T00:00:00.000Z');
-    expect(rows[0]?.revokedAt).toBeNull();
+    expect(rows[0]?.creator.user.displayName).toBe('Dinda');
+    expect(rows[0]?.createdAt.toISOString()).toBe('2026-11-13T03:42:00.000Z');
   });
 });

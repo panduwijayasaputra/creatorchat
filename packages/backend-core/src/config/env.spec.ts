@@ -14,6 +14,11 @@ const prod = {
   ADMIN_ACCESS_TOKEN_SECRET: 'b'.repeat(32),
   ADMIN_REFRESH_TOKEN_SECRET: 'c'.repeat(32),
   MASTER_ENCRYPTION_KEY: 'k'.repeat(44),
+  STORAGE_DRIVER: 'r2',
+  R2_ACCOUNT_ENDPOINT: 'https://account.r2.example.test',
+  R2_BUCKET: 'bucket',
+  R2_ACCESS_KEY_ID: 'key-id',
+  R2_SECRET_ACCESS_KEY: 'secret-value',
 };
 
 describe('loadEnv', () => {
@@ -72,6 +77,40 @@ describe('loadEnv', () => {
   it('accepts production with distinct strong secrets', () => {
     expect(loadEnv(prod).NODE_ENV).toBe('production');
   });
+
+  it('refuses the local disk storage driver in production', () => {
+    expect(() => loadEnv({ ...prod, STORAGE_DRIVER: 'local' })).toThrow(/STORAGE_DRIVER/);
+  });
+
+  it('requires every R2 setting when the r2 driver is selected, naming keys only', () => {
+    try {
+      loadEnv({ ...base, STORAGE_DRIVER: 'r2', R2_BUCKET: 'only-bucket' });
+      expect.unreachable();
+    } catch (error) {
+      const message = (error as EnvError).message;
+      expect(message).toContain('R2_ACCOUNT_ENDPOINT');
+      expect(message).toContain('R2_SECRET_ACCESS_KEY');
+      expect(message).not.toContain('only-bucket');
+    }
+  });
+
+  it('rejects a short local signing secret without echoing it', () => {
+    try {
+      loadEnv({ ...base, STORAGE_LOCAL_SIGNING_SECRET: 'tiny-secret-value' });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as EnvError).message).toContain('STORAGE_LOCAL_SIGNING_SECRET');
+      expect((error as EnvError).message).not.toContain('tiny-secret-value');
+    }
+  });
+
+  it('defaults the media limits to 10 MB photos, 200 MB and 300 s videos', () => {
+    const env = loadEnv(base);
+    expect(env.STORAGE_DRIVER).toBe('local');
+    expect(env.MEDIA_MAX_PHOTO_BYTES).toBe(10_485_760);
+    expect(env.MEDIA_MAX_VIDEO_BYTES).toBe(209_715_200);
+    expect(env.MEDIA_MAX_VIDEO_SECONDS).toBe(300);
+  });
 });
 
 describe('getIntegrationStatus', () => {
@@ -87,6 +126,7 @@ describe('getIntegrationStatus', () => {
       telegram: 'unconfigured',
       telegramWebhook: 'unconfigured',
       r2: 'unconfigured',
+      storage: 'unconfigured',
       ai: 'unconfigured',
       aiProvider: 'fake',
     });
@@ -124,6 +164,15 @@ describe('getIntegrationStatus', () => {
     );
     const status = getIntegrationStatus(loadEnv(full));
     expect(JSON.stringify(status)).not.toContain('wwww');
+  });
+
+  it('reports the storage driver that is usable', () => {
+    expect(getIntegrationStatus(loadEnv(base)).storage).toBe('unconfigured');
+    expect(
+      getIntegrationStatus(loadEnv({ ...base, STORAGE_LOCAL_SIGNING_SECRET: 's'.repeat(40) }))
+        .storage,
+    ).toBe('local');
+    expect(getIntegrationStatus(loadEnv(prod)).storage).toBe('r2');
   });
 
   it('keeps AI unconfigured while the provider is fake even with a key', () => {

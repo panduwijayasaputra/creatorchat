@@ -115,6 +115,44 @@
   font-weight: 700;
 }
 
+/* ProfilePending / ProfileRejected: the title row carries the status chip. */
+.creatorHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ProfilePending: "Lihat Status", the outlined button. */
+.outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 48px;
+  margin-top: 14px;
+  padding: 0 20px;
+  border: 1.5px solid var(--field);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.outline:hover {
+  background: var(--pink-soft);
+}
+
+.outline:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
 .creatorText {
   margin: 6px 0 0;
   font-size: 14px;

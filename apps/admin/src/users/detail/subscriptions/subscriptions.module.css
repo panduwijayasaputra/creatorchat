@@ -1,0 +1,254 @@
+.note {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--pink-soft);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.note svg {
+  flex: none;
+  color: var(--ink-2);
+}
+
+.addButton {
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.danger {
+  color: var(--err-fg);
+}
+
+/* Dialog form fields (AdmDlgGrant / AdmDlgExtend) */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fieldLabel {
+  margin: 0 0 6px 2px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.control {
+  position: relative;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1.5px solid var(--field);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.control:focus-within {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.control svg {
+  flex: none;
+  color: var(--ink-2);
+}
+
+.readonly {
+  background: var(--pink-soft);
+  color: var(--ink-2);
+}
+
+/* A real native control sits invisibly over the styled face, as in the Select component. */
+.native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.hint {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+.error {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--err-fg);
+}
+
+.skeleton {
+  height: 44px;
+  border-radius: 12px;
+  background: var(--pink-soft);
+}
+
+.retry {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rose);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Subscription detail (AdmSubDetail): two cards, 1fr / 1.2fr; the history table sits inside its card. */
+.detailGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.eventsTable {
+  margin-top: 12px;
+}
+
+@media (max-width: 1279px) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Berikan Akses user picker (no board: placeholder). */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:last-child {
+  border-bottom: 0;
+}
+
+.option[aria-pressed='true'] {
+  background: var(--pink);
+  font-weight: 600;
+}
+
+.optionMeta {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.pickerMessage {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* Pending access request banners (US-024). DESIGN GAP: no board; the note's tokens, warn tint. */
+.requests {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.requestBanner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--pink-soft);
+  border: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.requestIcon {
+  flex: none;
+  color: var(--ink-2);
+  display: flex;
+}
+
+.requestText {
+  min-width: 0;
+  flex: 1;
+}
+
+.requestTitle {
+  font-weight: 600;
+}
+
+.requestMeta {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2);
+}
+
+.retryLink {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--rose);
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .requestBanner {
+    flex-wrap: wrap;
+  }
+}

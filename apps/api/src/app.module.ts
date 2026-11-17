@@ -4,8 +4,11 @@ import { AdminModule } from './admin/admin.module.js';
 import { InfraModule } from './common/infra/infra.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { ChatModule } from './modules/chat/chat.module.js';
 import { CreatorsModule } from './modules/creators/creators.module.js';
 import { CreatorModule } from './modules/creator/creator.module.js';
+import { RealtimeModule } from './modules/realtime/realtime.module.js';
+import { MediaModule } from './modules/media/media.module.js';
 import { MeModule } from './modules/me/me.module.js';
 import { TelegramWebhookModule } from './modules/telegram-webhook/telegram-webhook.module.js';
 
@@ -21,7 +24,10 @@ export class AppModule {
         AuthModule,
         MeModule,
         CreatorsModule,
+        ChatModule,
         CreatorModule,
+        MediaModule.register(env),
+        RealtimeModule,
         TelegramWebhookModule,
         ...extraModules,
       ],

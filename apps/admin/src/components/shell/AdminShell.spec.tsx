@@ -69,7 +69,7 @@ describe('AdminShell navigation', () => {
   });
 
   it('shows the neutral placeholder for unbuilt destinations', async () => {
-    await renderAt('/creators');
+    await renderAt('/logs');
     expect(screen.getByTestId('not-implemented')).toHaveTextContent('Halaman ini belum dibangun');
   });
 

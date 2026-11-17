@@ -319,26 +319,105 @@ describe('/profile/creator-request', () => {
     );
   });
 
-  it('shows the normal form after a rejected request', async () => {
-    mount({
-      api: createFakeMiniappApi({
-        login: [nadia],
-        me: [nadia],
-        creatorRequestState: [
-          {
-            request: {
-              ...PENDING,
-              status: 'REJECTED',
-              reviewed_at: '2026-11-17T00:00:00.000Z',
-              review_reason: 'Link belum bisa diverifikasi',
-            },
-            blocked: null,
-          },
-        ],
-      }),
+  describe('after a rejection (CreatorRequestRetry)', () => {
+    const REASON =
+      'Link Instagram belum bisa kami verifikasi. Pastikan akun publik dan sesuai nama creator.';
+    const REJECTED = {
+      ...PENDING,
+      status: 'REJECTED' as const,
+      creator_name: 'Maya Lestari',
+      instagram_url: 'https://instagram.com/maya.lestari',
+      creator_type: 'AI_CHARACTER' as const,
+      description:
+        'Resep dan tips masak rumahan untuk pemula, dibagikan lewat foto dan video pendek.',
+      reviewed_at: '2026-11-15T00:00:00.000Z',
+      review_reason: REASON,
+    };
+    const retry = (blocked: typeof BLOCK | null = null) =>
+      mount({
+        api: createFakeMiniappApi({
+          login: [nadia],
+          me: [nadia],
+          creatorRequestState: [{ request: REJECTED, blocked }],
+        }),
+      });
+
+    it('prefills the rejected values and shows the reason on top', async () => {
+      retry();
+      await heading();
+      expect(screen.getByText(`Alasan penolakan sebelumnya: ${REASON}`)).toBeInTheDocument();
+      expect(name()).toHaveValue('Maya Lestari');
+      expect(link()).toHaveValue('https://instagram.com/maya.lestari');
+      expect(about()).toHaveValue(REJECTED.description);
+      expect(screen.getByRole('radio', { name: /Karakter AI/ })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      expect(screen.getByText(`${REJECTED.description.length}/300`)).toBeInTheDocument();
     });
+
+    it('starts with the rights statement unchecked and refuses to send until it is checked', async () => {
+      const user = userEvent.setup();
+      const { api } = retry();
+      await heading();
+      expect(rights()).not.toBeChecked();
+      await user.click(send());
+      expect(screen.getByText('Centang pernyataan ini untuk melanjutkan.')).toBeInTheDocument();
+      expect(api.submitRequestCalls).toHaveLength(0);
+    });
+
+    it('sends the edited values as a new request and goes to the status screen', async () => {
+      const user = userEvent.setup();
+      const { api, router } = retry();
+      await heading();
+      await user.clear(link());
+      await user.type(link(), 'https://instagram.com/maya.masak');
+      await user.click(rights());
+      await user.click(send());
+      await waitFor(() =>
+        expect(router.state.location.pathname).toBe('/profile/creator-request/status'),
+      );
+      expect(api.submitRequestCalls).toEqual([
+        {
+          creator_name: 'Maya Lestari',
+          instagram_url: 'https://instagram.com/maya.masak',
+          creator_type: 'AI_CHARACTER',
+          description: REJECTED.description,
+          rights_confirmed: true,
+        },
+      ]);
+    });
+
+    it('shows an HTML-looking reason as text', async () => {
+      mount({
+        api: createFakeMiniappApi({
+          login: [nadia],
+          me: [nadia],
+          creatorRequestState: [
+            { request: { ...REJECTED, review_reason: '<b>tebal</b>' }, blocked: null },
+          ],
+        }),
+      });
+      await heading();
+      expect(screen.getByText('Alasan penolakan sebelumnya: <b>tebal</b>')).toBeInTheDocument();
+      expect(document.querySelector('b')).toBeNull();
+    });
+
+    it('shows the blocked variant with the prefilled values disabled when a subscription is active', async () => {
+      retry(BLOCK);
+      expect(await screen.findByText('Belum bisa mengajukan')).toBeInTheDocument();
+      expect(name()).toHaveValue('Maya Lestari');
+      for (const field of [name(), link(), about(), rights()]) expect(field).toBeDisabled();
+      expect(send()).toBeDisabled();
+    });
+  });
+
+  it('shows the empty form and no reason card for a user without a request', async () => {
+    mount();
     await heading();
-    expect(send()).toBeEnabled();
+    expect(screen.queryByText(/Alasan penolakan sebelumnya/)).not.toBeInTheDocument();
+    expect(link()).toHaveValue('');
+    expect(about()).toHaveValue('');
   });
 
   it('shows a retry when the state cannot be loaded, then the form', async () => {

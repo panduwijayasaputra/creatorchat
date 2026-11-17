@@ -97,7 +97,12 @@ Try it locally without Telegram (the API still validates the signature for real)
    token only when testing with a real bot), `USER_SESSION_SECRET` (32+ random characters) and keep
    `ALLOWED_ORIGINS` containing `http://localhost:5173`. Without the token or secret the API still starts,
    but `POST /v1/auth/telegram` answers 503.
-2. Run `pnpm dev`, then print signed initData:
+2. Run `pnpm dev` and open http://localhost:5173 in a normal browser. The dev server signs initData
+   itself (`/__dev/initdata`, loopback only, dev server only), so you are logged in as the test user
+   Nadia (`100000001`). To be another account, add `?tgdev_id=…&tgdev_username=…` once; the tab keeps
+   it, e.g. the seeded creator Salsa: `http://localhost:5173/?tgdev_id=9000000001&tgdev_username=salsa_sample`
+   (pass the seeded username, otherwise the login clears it). `MINIAPP_DEV_TELEGRAM_LOGIN=off` turns
+   this off (the visual harness does). The manual way still works — print signed initData:
 
    ```bash
    pnpm telegram:initdata --id 100000001 --name Nadia --username nadia
@@ -204,6 +209,9 @@ pnpm --filter @creatorchat/db exec vitest run --project unit
 
 All variables are documented in `.env.example` (server) and `apps/*/.env.example` (browser, `VITE_*` only). See [CONFIGURATION.md](CONFIGURATION.md) for what each one does.
 
+- **Media (US-032):** uploads go through short-lived signed URLs. In development `STORAGE_DRIVER=local` keeps files under `.data/media` (git-ignored) and the API serves the signed URLs itself; set `STORAGE_LOCAL_SIGNING_SECRET` (32+ characters) in `.env` first, otherwise media answers 503. The worker needs `ffmpeg` and `ffprobe` (`brew install ffmpeg`); without them it logs one warning and uploaded files wait. To use a real R2 bucket set `STORAGE_DRIVER=r2` with the `R2_*` values and add a CORS rule on the bucket that allows `PUT` and `GET` (header `Content-Type`) from the Mini App origin. Run `pnpm exec prisma migrate deploy` after pulling.
+- **Realtime (US-031):** the API serves Socket.IO at `/realtime` and the worker publishes committed message / read events to it through Redis, so live updates need `pnpm dev` (api + worker) and Redis. No new env variables. Run `pnpm exec prisma migrate deploy` (or `pnpm db:migrate`) after pulling: it adds `outbox_events.realtime_published_at`. Without the worker, chats still work and refresh on navigation. Telegram's WebView is not checked here: after trying it on a real device, report how the WebSocket behaved.
+- **Bot notifications (US-013):** the worker sends the creator-request result (approved / rejected) from the outbox. It needs `TELEGRAM_BOT_TOKEN`, `MINIAPP_URL` and Redis; without the token or the URL it logs one warning and the events simply wait in `outbox_events` until the worker is restarted with them. Redis keys use the `bull` prefix. Try it with a dev bot: `pnpm dev`, approve a request in the admin API, and the applicant's Telegram chat gets the message. A user who blocked the bot is flagged (`users.bot_blocked_at`) and skipped until they send `/start` again. Run `pnpm db:migrate` after pulling.
 - Without Telegram, R2 or AI credentials the API and worker still start and log which integrations are **unconfigured** (look for the `integration status` log line).
 - Values like `<set-locally>` count as "not set".
 - Never put a secret in a `VITE_*` variable: those are bundled into the browser.

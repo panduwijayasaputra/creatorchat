@@ -76,11 +76,16 @@ export function createTestPrisma(): PrismaClient {
 const APP_TABLES = [
   'sessions',
   'creator_applications',
+  'access_requests',
+  'subscription_events',
+  'conversations',
   'subscriptions',
   'creators',
   'users',
   'admin_accounts',
   'audit_logs',
+  'outbox_events',
+  'notification_deliveries',
 ] as const;
 
 /**

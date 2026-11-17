@@ -30,3 +30,20 @@ export function formatDateTime(
 export function formatTime(value: string | number | Date, timeZone: string): string {
   return formatDateTime(value, timeZone, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
+
+/** The label shown after a clock time: WIB / WITA / WIT for the Indonesian zones, else the zone's own short name. */
+export function zoneLabel(timeZone: string): string {
+  const known: Record<string, string> = {
+    'Asia/Jakarta': 'WIB',
+    'Asia/Makassar': 'WITA',
+    'Asia/Jayapura': 'WIT',
+  };
+  const fixed = known[timeZone];
+  if (fixed) return fixed;
+  const zone = isKnownZone(timeZone) ? timeZone : FALLBACK_ZONE;
+  return (
+    new Intl.DateTimeFormat('id-ID', { timeZone: zone, timeZoneName: 'short' })
+      .formatToParts(new Date())
+      .find((p) => p.type === 'timeZoneName')?.value ?? zone
+  );
+}

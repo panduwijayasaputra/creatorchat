@@ -17,6 +17,11 @@ export interface ConfirmReason {
   required?: boolean;
   hint?: ReactNode;
   placeholder?: string;
+  /**
+   * Shown in red instead of the hint once the field was touched (or cleared) and is empty, as in
+   * `AdmDlgRejectEmpty`. Without it an empty required reason only keeps the confirm button disabled.
+   */
+  requiredMessage?: string;
 }
 
 export interface ConfirmDialogProps {
@@ -35,9 +40,22 @@ export interface ConfirmDialogProps {
   destructive?: boolean;
   /** Dialog width in px (560 by default; the logout dialog is 480). */
   width?: number;
+  /** Distance from the top of the viewport in px (150 by default; the access dialogs sit at 110). */
+  top?: number;
+  /** Text under the reason field, before the buttons (the access dialogs' closing sentence). */
+  afterReason?: ReactNode;
   /** Shown inline when `onConfirm` throws; the thrown message is never displayed. */
   failureMessage?: string;
-  onConfirm: (reason?: string) => Promise<void> | void;
+  /** The confirm button stays visible but inert (e.g. the dialog is showing why it cannot proceed). */
+  confirmDisabled?: boolean;
+  /** Label (with a spinner) while `onConfirm` is pending, as in `AdmDlgApproveLoading`. */
+  pendingLabel?: string;
+  /**
+   * Resolve `false` to keep the dialog open after a handled outcome (the caller changed its own
+   * content, e.g. into a "cannot approve" explanation). Anything else closes it; a throw shows
+   * `failureMessage`.
+   */
+  onConfirm: (reason?: string) => Promise<void | boolean> | void | boolean;
   onClose: () => void;
 }
 
@@ -60,7 +78,11 @@ export function ConfirmDialog({
   confirmLabel,
   destructive = false,
   width = 560,
+  top,
+  afterReason,
   failureMessage = 'Gagal memproses. Coba lagi.',
+  confirmDisabled = false,
+  pendingLabel,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
@@ -77,6 +99,7 @@ export function ConfirmDialog({
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const [reasonText, setReasonText] = useState('');
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     mounted.current = true;
@@ -93,6 +116,7 @@ export function ConfirmDialog({
     document.body.style.overflow = 'hidden';
     setFailed(false);
     setReasonText('');
+    setTouched(false);
     (reasonRef.current ?? cancelRef.current)?.focus();
     return () => {
       document.body.style.overflow = previousOverflow;
@@ -107,18 +131,19 @@ export function ConfirmDialog({
 
   const trimmed = reasonText.trim();
   const reasonMissing = Boolean(reason?.required) && trimmed === '';
+  const reasonError = reasonMissing && touched ? (reason?.requiredMessage ?? null) : null;
 
   const confirm = async () => {
-    if (pendingRef.current || reasonMissing) return;
+    if (pendingRef.current || reasonMissing || confirmDisabled) return;
     pendingRef.current = true;
     setPending(true);
     setFailed(false);
     try {
-      await onConfirm(reason ? trimmed : undefined);
+      const result = await onConfirm(reason ? trimmed : undefined);
       pendingRef.current = false;
       if (mounted.current) {
         setPending(false);
-        onClose();
+        if (result !== false) onClose();
       }
     } catch {
       pendingRef.current = false;
@@ -162,7 +187,7 @@ export function ConfirmDialog({
         aria-labelledby={titleId}
         aria-describedby={descId}
         className={styles.dialog}
-        style={{ width }}
+        style={{ width, ...(top !== undefined ? { top } : {}) }}
         onKeyDown={onKeyDown}
       >
         <div className={styles.head}>
@@ -184,16 +209,29 @@ export function ConfirmDialog({
               <textarea
                 id={reasonId}
                 ref={reasonRef}
-                className={styles.reason}
+                className={reasonError ? `${styles.reason} ${styles.reasonInvalid}` : styles.reason}
                 value={reasonText}
                 placeholder={reason.placeholder}
                 required={reason.required}
                 disabled={pending}
-                onChange={(e) => setReasonText(e.target.value)}
+                aria-invalid={reasonError ? true : undefined}
+                aria-describedby={reasonError ? `${reasonId}-error` : undefined}
+                onChange={(e) => {
+                  setReasonText(e.target.value);
+                  setTouched(true);
+                }}
+                onBlur={() => setTouched(true)}
               />
-              {reason.hint ? <div className={styles.hint}>{reason.hint}</div> : null}
+              {reasonError ? (
+                <div id={`${reasonId}-error`} className={`${styles.hint} ${styles.hintError}`}>
+                  {reasonError}
+                </div>
+              ) : reason.hint ? (
+                <div className={styles.hint}>{reason.hint}</div>
+              ) : null}
             </div>
           ) : null}
+          {afterReason ? <div className={styles.after}>{afterReason}</div> : null}
           {failed ? (
             <div role="alert" className={styles.error}>
               {failureMessage}
@@ -201,20 +239,43 @@ export function ConfirmDialog({
           ) : null}
         </div>
         <div className={styles.actions}>
-          <Button ref={cancelRef} variant="outline" onClick={close} disabled={pending}>
+          <Button
+            ref={cancelRef}
+            variant="outline"
+            className={styles.cancel}
+            onClick={close}
+            disabled={pending}
+          >
             {cancelLabel}
           </Button>
           <Button
             variant={destructive ? 'destructive' : 'primary'}
             loading={pending}
-            disabled={reasonMissing}
+            disabled={reasonMissing || confirmDisabled}
+            icon={pending && pendingLabel ? <Spinner /> : undefined}
             onClick={() => void confirm()}
           >
-            {confirmLabel}
+            {pending && pendingLabel ? pendingLabel : confirmLabel}
           </Button>
         </div>
       </div>
     </>,
     document.body,
+  );
+}
+
+/** The spinner of `AdmDlgApproveLoading` (track and arc colours from the board). */
+function Spinner() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 44 44" aria-hidden="true" className={styles.spin}>
+      <circle cx="22" cy="22" r="18" fill="none" stroke="#D8C0CA" strokeWidth="5" />
+      <path
+        d="M22 4a18 18 0 0 1 18 18"
+        fill="none"
+        stroke="#A83F67"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

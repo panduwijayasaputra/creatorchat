@@ -1,6 +1,6 @@
 # US-019: Admin blocks and unblocks a user
 
-**Status:** backlog
+**Status:** ready_for_uat
 **Priority:** high
 **Feature:** admin-accounts
 **Phase:** B
@@ -19,3 +19,20 @@ As an Admin, I want to block a user who misuses the app and unblock them later, 
 - [ ] **Unblock** opens `AdmDlgUserUnblock`; confirming restores ACTIVE, audits it, and the list shows `AdmUsersToastUnblock`. Unblock doesn't change subscriptions.
 - [ ] Reason required on the server for block (empty → 400, inline error kept). Blocking a blocked user or unblocking an active one returns a conflict and changes nothing; double submit acts once; buttons disabled in flight. This endpoint refuses CREATOR accounts (they are blocked via US-016).
 - [ ] Admin-only (cookie + CSRF). Integration tests: block revokes a live user session, unblock lets the user sign in again, audit rows carry the reason. Screenshots at 1440 px match the boards.
+
+## Tasks
+
+### TASK-108: Contracts for user moderation
+**Status:** done
+
+### TASK-109: `UserModerationService` (backend-core)
+**Status:** done
+
+### TASK-110: Admin endpoints
+**Status:** done
+
+### TASK-111: Admin API client + Block / Unblock user dialogs
+**Status:** done
+
+### TASK-112: Wire the users list + visual check
+**Status:** done

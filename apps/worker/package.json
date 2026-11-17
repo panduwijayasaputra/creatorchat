@@ -13,10 +13,17 @@
   "dependencies": {
     "@creatorchat/backend-core": "workspace:*",
     "@creatorchat/db": "workspace:*",
+    "@socket.io/redis-emitter": "5.1.0",
+    "bullmq": "6.5.4",
+    "grammy": "1.46.0",
     "ioredis": "6.0.0",
-    "pino": "10.4.0"
+    "pino": "10.4.0",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@socket.io/redis-adapter": "8.3.0",
+    "socket.io": "4.8.4",
+    "socket.io-client": "4.8.4",
     "tsx": "4.23.15"
   }
 }

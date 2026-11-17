@@ -8,6 +8,8 @@ export interface BottomNavProps {
   label: string;
   /** Unread count shown on the first item; hidden for 0 / undefined, "99+" above 99. */
   unreadCount?: number;
+  /** The badge's accessible label; a customer's badge counts messages, a creator's counts conversations. */
+  badgeLabel?: (count: number) => string;
   /** Forces which item looks active (previews); by default the router location decides. */
   current?: string;
 }
@@ -17,7 +19,7 @@ export function formatBadge(count: number): string {
 }
 
 /** Bottom navigation (Chats / CrInbox boards): 88 px, 24 px bottom padding or the safe area. */
-export function BottomNav({ items, label, unreadCount, current }: BottomNavProps) {
+export function BottomNav({ items, label, unreadCount, badgeLabel, current }: BottomNavProps) {
   return (
     <nav aria-label={label} className={styles.nav}>
       {items.map(({ to, label: itemLabel, icon: Icon }, index) => {
@@ -38,7 +40,10 @@ export function BottomNav({ items, label, unreadCount, current }: BottomNavProps
                   <span className={styles.icon}>
                     <Icon size={24} strokeWidth={isActive ? 2 : 1.75} />
                     {badge !== null ? (
-                      <span className={styles.badge} aria-label={`${badge} pesan belum dibaca`}>
+                      <span
+                        className={styles.badge}
+                        aria-label={badgeLabel ? badgeLabel(badge) : `${badge} pesan belum dibaca`}
+                      >
                         {formatBadge(badge)}
                       </span>
                     ) : null}

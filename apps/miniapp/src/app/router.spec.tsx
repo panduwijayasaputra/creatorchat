@@ -41,15 +41,28 @@ describe('Mini App routes', () => {
     expect(await screen.findByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
   });
 
-  it.each(['/chats', '/explore', '/subscriptions'])(
-    'shows the customer shell with the placeholder at %s',
-    async (path) => {
-      await renderAt(path);
-      expect(screen.getByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
-      expect(screen.queryByRole('navigation', { name: 'Navigasi creator' })).toBeNull();
-      expect(screen.getByTestId('not-implemented')).toHaveTextContent('Halaman ini belum dibangun');
-    },
-  );
+  it('shows the customer shell with the real chat list (not a placeholder) at /chats', async () => {
+    await renderAt('/chats');
+    expect(screen.getByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Navigasi creator' })).toBeNull();
+    expect(await screen.findByRole('heading', { name: 'Chat' })).toBeInTheDocument();
+    expect(await screen.findByText('Salsa Maheswari')).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+  });
+
+  it('shows the customer shell with the real Langganan (not a placeholder) at /subscriptions', async () => {
+    await renderAt('/subscriptions');
+    expect(screen.getByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Langganan' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+  });
+
+  it('shows the customer shell with the real Explore (not a placeholder) at /explore', async () => {
+    await renderAt('/explore');
+    expect(screen.getByRole('navigation', { name: 'Navigasi utama' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Jelajahi' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+  });
 
   it('shows the customer shell with the real profile (not a placeholder) at /profile', async () => {
     await renderAt('/profile');
@@ -58,15 +71,37 @@ describe('Mini App routes', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Profil');
   });
 
-  it.each(['/inbox', '/gallery', '/broadcast'])(
-    'shows the creator shell with the placeholder at %s',
-    async (path) => {
-      await renderAt(path, { api: createFakeMiniappApi({ me: [maya] }) });
-      expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
-      expect(screen.queryByRole('navigation', { name: 'Navigasi utama' })).toBeNull();
-      expect(screen.getByTestId('not-implemented')).toBeInTheDocument();
-    },
-  );
+  it.each(['/broadcast'])('shows the creator shell with the placeholder at %s', async (path) => {
+    await renderAt(path, { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Navigasi utama' })).toBeNull();
+    expect(screen.getByTestId('not-implemented')).toBeInTheDocument();
+  });
+
+  it('shows the creator shell with the real gallery (not a placeholder) at /gallery', async () => {
+    await renderAt('/gallery', { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Galeri' })).toBeInTheDocument();
+  });
+
+  it('shows the creator shell with the real inbox (not a placeholder) at /inbox', async () => {
+    await renderAt('/inbox', { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inbox' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+  });
+
+  it('shows the real conversation and customer detail (US-029), full screen without navigation', async () => {
+    const id = '33333333-0000-4000-8000-000000000001';
+    await renderAt(`/inbox/${id}`, { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(await screen.findByRole('textbox', { name: 'Tulis balasan' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Navigasi creator' })).toBeNull();
+    cleanup();
+    await renderAt(`/inbox/${id}/customer`, { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(await screen.findByRole('link', { name: 'Buka Chat' })).toBeInTheDocument();
+  });
 
   it('shows the creator shell with the real settings (not a placeholder) at /settings', async () => {
     await renderAt('/settings', { api: createFakeMiniappApi({ me: [maya] }) });
@@ -84,12 +119,7 @@ describe('Mini App routes', () => {
 
   it('passes the unread count to the first tab of the active shell', async () => {
     await renderAt('/inbox', { unreadCount: 3, api: createFakeMiniappApi({ me: [maya] }) });
-    expect(screen.getByLabelText('3 pesan belum dibaca')).toBeInTheDocument();
-  });
-
-  it('keeps the API health indicator on the chat placeholder', async () => {
-    await renderAt('/chats');
-    expect(await screen.findByText('API unreachable')).toBeInTheDocument();
+    expect(screen.getByLabelText('3 percakapan belum dibaca')).toBeInTheDocument();
   });
 
   it('lands a CREATOR from / on /inbox', async () => {

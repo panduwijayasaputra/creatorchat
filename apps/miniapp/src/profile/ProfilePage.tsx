@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import type { CreatorRequestBlock } from '@creatorchat/contracts';
+import type { CreatorRequestStateResponse } from '@creatorchat/contracts';
 import {
   ArrowUpRightIcon,
   Avatar,
@@ -9,6 +9,7 @@ import {
   LockIcon,
   PencilIcon,
   ShieldIcon,
+  StatusChip,
   Switch,
 } from '@creatorchat/ui';
 import type { MiniappApi } from '../auth/api-client';
@@ -23,14 +24,15 @@ import styles from './profile.module.css';
 export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestState'> }) {
   const { state } = useAuth();
   const [flash, showFlash] = useFlashMessage();
-  // The server decides (ProfileBlocked); until it answers, or if it cannot, the normal card stays.
-  // The submit call re-checks the rule, so a missed block is refused there.
-  const [blocked, setBlocked] = useState<CreatorRequestBlock | null>(null);
+  // The server decides which card shows (pending, blocked, rejected); until it answers, or if it
+  // cannot, the normal invitation stays. The submit call re-checks the rules, so a missed state
+  // is refused there.
+  const [requestState, setRequestState] = useState<CreatorRequestStateResponse | null>(null);
   useEffect(() => {
     let current = true;
     api.getCreatorRequestState().then(
       (result) => {
-        if (current) setBlocked(result.blocked);
+        if (current) setRequestState(result);
       },
       () => undefined,
     );
@@ -40,6 +42,8 @@ export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestS
   }, [api]);
   if (state.status !== 'authenticated') return null;
   const { user } = state;
+  const request = requestState?.request ?? null;
+  const blocked = requestState?.blocked ?? null;
   const adminUrl = botUrl(import.meta.env.VITE_TELEGRAM_BOT_USERNAME);
 
   return (
@@ -67,9 +71,23 @@ export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestS
       </section>
 
       <section className={styles.creatorCard} aria-label="Jadi creator">
-        <h2 className={styles.creatorTitle}>Ingin menjadi creator?</h2>
-        {blocked ? (
+        {request?.status === 'PENDING' ? (
           <>
+            <div className={styles.creatorHead}>
+              <h2 className={styles.creatorTitle}>Permintaan creator</h2>
+              <StatusChip status="request" label="Sedang Ditinjau" />
+            </div>
+            <p className={styles.creatorText}>
+              Hasil peninjauan akan dikirim melalui Telegram. Kamu tetap bisa memakai fitur
+              pelanggan.
+            </p>
+            <Link to="/profile/creator-request/status" className={styles.outline}>
+              Lihat Status
+            </Link>
+          </>
+        ) : blocked ? (
+          <>
+            <h2 className={styles.creatorTitle}>Ingin menjadi creator?</h2>
             <p className={styles.creatorText}>
               Permintaan menjadi creator dapat diajukan setelah seluruh langganan pelanggan
               berakhir.
@@ -87,8 +105,21 @@ export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestS
               Ajukan Jadi Creator
             </button>
           </>
+        ) : request?.status === 'REJECTED' ? (
+          <>
+            <div className={styles.creatorHead}>
+              <h2 className={styles.creatorTitle}>Permintaan creator</h2>
+              <StatusChip status="failed" label="Ditolak" />
+            </div>
+            {/* Admin text: a plain text node, never HTML. */}
+            <p className={styles.creatorText}>{request.review_reason}</p>
+            <Link to="/profile/creator-request" className={`${styles.action} ${styles.primary}`}>
+              Perbaiki dan Ajukan Lagi
+            </Link>
+          </>
         ) : (
           <>
+            <h2 className={styles.creatorTitle}>Ingin menjadi creator?</h2>
             <p className={styles.creatorText}>
               Ajukan akunmu. Setelah disetujui admin, akun ini berubah menjadi akun creator.
             </p>

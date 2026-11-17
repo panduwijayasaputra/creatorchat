@@ -5,8 +5,30 @@
   background: var(--bg);
 }
 
+.bare {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.dense .th,
+.dense .td {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.dense .th:first-child,
+.dense .td:first-child {
+  padding-left: 16px;
+}
+.dense .th:last-child,
+.dense .td:last-child {
+  padding-right: 16px;
+}
+
+/* Wraps instead of clipping when a page adds a filter (US-024). */
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;

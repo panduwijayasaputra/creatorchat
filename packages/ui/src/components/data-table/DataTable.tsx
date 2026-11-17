@@ -46,6 +46,10 @@ export interface DataTableProps<Row> {
   /** Narrower than this the frame scrolls horizontally. */
   minWidth?: number;
   skeletonRows?: number;
+  /** No card around the toolbar and frame: the page already provides the surface (list pages). */
+  bare?: boolean;
+  /** Tighter cell padding for wide tables such as the creator list. */
+  dense?: boolean;
 }
 
 const SKELETON_WIDTHS = [60, 71, 82, 93, 69, 80, 91, 67];
@@ -65,6 +69,8 @@ export function DataTable<Row>({
   pagination,
   minWidth = 960,
   skeletonRows = 6,
+  bare = false,
+  dense = false,
 }: DataTableProps<Row>) {
   const empty = status === 'ready' && rows.length === 0;
 
@@ -81,7 +87,11 @@ export function DataTable<Row>({
   });
 
   return (
-    <section className={styles.section}>
+    <section
+      className={[bare ? styles.bare : styles.section, dense ? styles.dense : '']
+        .filter(Boolean)
+        .join(' ')}
+    >
       {toolbar}
       <div className={styles.frame}>
         <div className={styles.scroller}>
@@ -239,7 +249,16 @@ function StateBlock({
 }
 
 /** Toolbar layout (search, filters, Reset Filter) used above the frame. */
-export function TableToolbar({ children, onReset }: { children: ReactNode; onReset?: () => void }) {
+export function TableToolbar({
+  children,
+  onReset,
+  actions,
+}: {
+  children: ReactNode;
+  onReset?: () => void;
+  /** Primary actions to the right of Reset Filter (e.g. "Berikan Akses"). */
+  actions?: ReactNode;
+}) {
   return (
     <div className={styles.toolbar}>
       {children}
@@ -247,6 +266,7 @@ export function TableToolbar({ children, onReset }: { children: ReactNode; onRes
         <RefreshIcon size={16} strokeWidth={2} />
         Reset Filter
       </button>
+      {actions}
     </div>
   );
 }

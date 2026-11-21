@@ -44,6 +44,7 @@ export class CreatorController {
       profile: found.profile,
       public_code: found.publicCode,
       bio_link: buildBioLink(this.env.TELEGRAM_BOT_USERNAME, found.publicCode),
+      welcome_enabled: found.welcomeEnabled,
     };
   }
 

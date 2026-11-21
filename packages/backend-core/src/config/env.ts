@@ -88,6 +88,8 @@ const baseSchema = z.object({
     .positive()
     .default(200 * 1024 * 1024),
   MEDIA_MAX_VIDEO_SECONDS: z.coerce.number().int().positive().default(300),
+  /** How many days before `ends_at` the customer is reminded (US-045); the brief leaves it open, 3 is the default. */
+  ACCESS_REMINDER_LEAD_DAYS: z.coerce.number().int().min(1).max(30).default(3),
   FFMPEG_PATH: z.string().min(1).default('ffmpeg'),
   FFPROBE_PATH: z.string().min(1).default('ffprobe'),
   AI_PROVIDER: z.string().default('fake'),

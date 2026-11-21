@@ -31,8 +31,14 @@ function mount(
   user = nadia,
   path = '/profile',
   creatorRequestState: (CreatorRequestStateResponse | Error)[] = [],
+  options: Partial<Parameters<typeof createFakeMiniappApi>[0]> = {},
 ) {
-  const api = createFakeMiniappApi({ login: [user], me: [user], creatorRequestState });
+  const api = createFakeMiniappApi({
+    login: [user],
+    me: [user],
+    creatorRequestState,
+    ...options,
+  });
   const router = createMemoryRouter(
     createMiniappRoutes({
       api,
@@ -42,7 +48,7 @@ function mount(
     { initialEntries: [path] },
   );
   render(<RouterProvider router={router} />);
-  return router;
+  return Object.assign(router, { api });
 }
 
 describe('/profile creator invitation', () => {
@@ -174,16 +180,6 @@ describe('/profile', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/profile/creator-request'));
   });
 
-  it('shows the Notifikasi switches in the designed state, not interactive', async () => {
-    mount();
-    const messages = await screen.findByRole('switch', { name: 'Notifikasi pesan' });
-    const content = screen.getByRole('switch', { name: 'Tampilkan isi pesan di notifikasi' });
-    expect(messages).toHaveAttribute('aria-checked', 'true');
-    expect(content).toHaveAttribute('aria-checked', 'false');
-    expect(messages).toBeDisabled();
-    expect(content).toBeDisabled();
-  });
-
   it('Kebijakan Privasi gives placeholder feedback (design gap) and navigates nowhere', async () => {
     const router = mount();
     await userEvent.click(await screen.findByRole('button', { name: 'Kebijakan Privasi' }));
@@ -217,5 +213,104 @@ describe('/profile', () => {
     const router = mount(maya);
     await waitFor(() => expect(router.state.location.pathname).toBe('/inbox'));
     expect(screen.queryByText('Ingin menjadi creator?')).toBeNull();
+  });
+});
+
+describe('/profile Notifikasi switches (US-043)', () => {
+  const messages = () => screen.findByRole('switch', { name: 'Notifikasi pesan' });
+  const content = () => screen.getByRole('switch', { name: 'Tampilkan isi pesan' });
+
+  it('start in the designed default state once the server answered, and are enabled', async () => {
+    mount();
+    const m = await messages();
+    await waitFor(() => expect(m).toBeEnabled());
+    expect(m).toHaveAttribute('aria-checked', 'true');
+    expect(content()).toHaveAttribute('aria-checked', 'false');
+    expect(content()).toBeEnabled();
+    expect(screen.getByText('Kabar saat creator membalas.')).toBeInTheDocument();
+    expect(screen.getByText('Mati secara default. Isi pesan disembunyikan.')).toBeInTheDocument();
+  });
+
+  it('show what the server holds', async () => {
+    mount(nadia, '/profile', [], {
+      notificationGet: [{ messages_enabled: false, show_content: true }],
+    });
+    const m = await messages();
+    await waitFor(() => expect(m).toBeEnabled());
+    expect(m).toHaveAttribute('aria-checked', 'false');
+    expect(content()).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('stay disabled, in the default state, while loading and when the server cannot answer', async () => {
+    mount(nadia, '/profile', [], { notificationGet: [new Error('offline')] });
+    const m = await messages();
+    expect(m).toBeDisabled();
+    expect(content()).toBeDisabled();
+    expect(m).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('a tap shows at once and saves only that switch', async () => {
+    const router = mount();
+    const m = await messages();
+    await waitFor(() => expect(m).toBeEnabled());
+    await userEvent.click(content());
+    expect(content()).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(router.api.notificationUpdateCalls).toHaveLength(1));
+    expect(router.api.notificationUpdateCalls[0]).toEqual({ show_content: true });
+    await userEvent.click(m);
+    await waitFor(() => expect(router.api.notificationUpdateCalls).toHaveLength(2));
+    expect(router.api.notificationUpdateCalls[1]).toEqual({ messages_enabled: false });
+    expect(router.api.notificationPreferences).toEqual({
+      messages_enabled: false,
+      show_content: true,
+    });
+  });
+
+  it('a refused save puts the switch back and tells the customer', async () => {
+    const router = mount(nadia, '/profile', [], { notificationUpdate: [new Error('offline')] });
+    const m = await messages();
+    await waitFor(() => expect(m).toBeEnabled());
+    await userEvent.click(content());
+    await waitFor(() => expect(content()).toHaveAttribute('aria-checked', 'false'));
+    expect(await screen.findByRole('status')).toHaveTextContent('Pengaturan belum tersimpan.');
+    expect(router.api.notificationPreferences.show_content).toBe(false);
+  });
+
+  it('rapid taps on one switch send one request at a time and end in the last tap', async () => {
+    let release: (v: { messages_enabled: boolean; show_content: boolean }) => void = () =>
+      undefined;
+    const first = new Promise<{ messages_enabled: boolean; show_content: boolean }>((resolve) => {
+      release = resolve;
+    });
+    const router = mount(nadia, '/profile', [], { notificationUpdate: [first] });
+    const m = await messages();
+    await waitFor(() => expect(m).toBeEnabled());
+    await userEvent.click(content()); // wants true, request 1 in flight
+    await userEvent.click(content()); // wants false again
+    await userEvent.click(content()); // wants true: the last tap
+    expect(router.api.notificationUpdateCalls).toHaveLength(1);
+    release({ messages_enabled: true, show_content: true });
+    // the confirmed state already equals the last tap, so nothing more is sent
+    await waitFor(() => expect(content()).toHaveAttribute('aria-checked', 'true'));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(router.api.notificationUpdateCalls).toHaveLength(1);
+  });
+
+  it('a tap made while a save is in flight is sent afterwards when it differs from the confirmed state', async () => {
+    let release: (v: { messages_enabled: boolean; show_content: boolean }) => void = () =>
+      undefined;
+    const first = new Promise<{ messages_enabled: boolean; show_content: boolean }>((resolve) => {
+      release = resolve;
+    });
+    const router = mount(nadia, '/profile', [], { notificationUpdate: [first] });
+    const m = await messages();
+    await waitFor(() => expect(m).toBeEnabled());
+    await userEvent.click(content()); // true, in flight
+    await userEvent.click(content()); // false while it is in flight
+    release({ messages_enabled: true, show_content: true });
+    await waitFor(() => expect(router.api.notificationUpdateCalls).toHaveLength(2));
+    expect(router.api.notificationUpdateCalls[1]).toEqual({ show_content: false });
+    await waitFor(() => expect(router.api.notificationPreferences.show_content).toBe(false));
+    expect(content()).toHaveAttribute('aria-checked', 'false');
   });
 });

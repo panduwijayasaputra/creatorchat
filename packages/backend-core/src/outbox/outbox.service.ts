@@ -18,6 +18,13 @@ export const OutboxEventType = {
   READ_UPDATED: 'read.updated',
   // US-032: an upload was verified and waits for the worker (clean, thumbnail, gallery).
   MEDIA_UPLOADED: 'media.uploaded',
+  // US-045: written by the access scheduler (not by a business transaction); the notification pipeline sends them.
+  SUBSCRIPTION_REMINDER_DUE: 'subscription.reminder_due',
+  SUBSCRIPTION_ENDED: 'subscription.ended',
+  // US-041: written by the grant that creates a customer's subscription (their first access).
+  WELCOME_REQUESTED: 'welcome.requested',
+  // US-038: a creator recorded a broadcast; the worker fans it out in US-039.
+  BROADCAST_CREATED: 'broadcast.created',
 } as const;
 export type OutboxEventType = (typeof OutboxEventType)[keyof typeof OutboxEventType];
 

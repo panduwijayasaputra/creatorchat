@@ -340,7 +340,8 @@ describe('grant, list, extend, revoke', () => {
       admin.fetch('POST', listPath(u.userId), grantBody(c.id)),
     ]);
     expect(res.map((r) => r.status).sort()).toEqual([201, 409]);
-    expect(await rowCounts()).toEqual({ subs: 1, events: 1, audit: 1, outbox: 1 });
+    // the access event and, because it is the first access, the request for the welcome message
+    expect(await rowCounts()).toEqual({ subs: 1, events: 1, audit: 1, outbox: 2 });
   });
 });
 

@@ -194,7 +194,10 @@ describe('sending a gallery asset', () => {
     const theirs = ChatHistoryResponseSchema.parse(theirsRes.json());
     const message = theirs.items[0];
     expect(message).toMatchObject({ type: 'MEDIA', body: 'lihat ini' });
-    expect(message?.attachments[0]).toMatchObject({ id, kind: 'PHOTO' });
+    // The customer gets the id of the attachment row (what the viewer takes), never the asset id.
+    const row = await prisma.messageAttachment.findFirstOrThrow({ where: { assetId: id } });
+    expect(message?.attachments[0]).toMatchObject({ id: row.id, kind: 'PHOTO' });
+    expect(message?.attachments[0]?.id).not.toBe(id);
     expect(theirsRes.body).not.toMatch(
       /"origin"|object_key|thumb_key|asset_id|creator_id|declared/,
     );
@@ -371,6 +374,7 @@ describe('who may send what', () => {
     const history = ChatHistoryResponseSchema.parse(
       (await call('GET', `/v1/chats/${c.conversation.id}/messages`, c.customerLogin.token)).json(),
     );
-    expect(history.items[0]?.attachments[0]?.id).toBe(id);
+    const row = await prisma.messageAttachment.findFirstOrThrow({ where: { assetId: id } });
+    expect(history.items[0]?.attachments[0]?.id).toBe(row.id);
   });
 });

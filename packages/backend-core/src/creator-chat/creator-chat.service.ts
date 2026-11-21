@@ -1,8 +1,9 @@
 import { Prisma, type PrismaClient } from '@creatorchat/db';
 import { CHAT_TEXT_MAX } from '../chat/chat.service.js';
+import { writeCreatorMessage } from '../chat/message-writer.js';
 import { attachmentsFor, type StoredAttachment } from '../media/attachments.js';
 import type { MediaAccessService } from '../media/media-access.service.js';
-import { OutboxEventType, type OutboxService } from '../outbox/outbox.service.js';
+import type { OutboxService } from '../outbox/outbox.service.js';
 import { isEntitled } from '../subscription-access/entitlement.js';
 
 export interface CreatorChatMessage {
@@ -215,28 +216,13 @@ export class CreatorChatService {
         }
       }
 
-      const [counter] = await tx.$queryRaw<{ seq: number }[]>`
-        UPDATE conversations SET last_message_seq = last_message_seq + 1, last_message_at = ${now}, updated_at = ${now}
-        WHERE id = ${conversationId}::uuid RETURNING last_message_seq AS seq`;
-      const row = await tx.message.create({
-        data: {
-          conversationId,
-          senderUserId: creatorUserId,
-          type: assetId === null ? 'TEXT' : 'MEDIA',
-          body,
-          origin: 'MANUAL',
-          clientMessageId: input.clientMessageId,
-          seq: counter!.seq,
-          createdAt: now,
-          ...(assetId !== null ? { attachments: { create: { assetId, position: 0 } } } : {}),
-        },
-      });
-      await this.outbox.add(tx, {
-        type: OutboxEventType.MESSAGE_CREATED,
-        aggregateType: 'message',
-        aggregateId: row.id,
-        payload: { message_id: row.id, conversation_id: conversationId, sender_id: creatorUserId },
-        dedupeKey: `message:${row.id}:created`,
+      const row = await writeCreatorMessage(tx, this.outbox, {
+        conversationId,
+        creatorUserId,
+        clientMessageId: input.clientMessageId,
+        body,
+        assetId,
+        now,
       });
       return { kind: 'created', row } as const;
     });

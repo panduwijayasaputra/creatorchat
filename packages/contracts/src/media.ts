@@ -31,7 +31,7 @@ export type MediaFailure = z.infer<typeof MediaFailureSchema>;
 export const isPhotoType = (type: string): boolean =>
   (PHOTO_TYPES as readonly string[]).includes(type);
 
-export const MEDIA_PURPOSES = ['GALLERY', 'CHAT'] as const;
+export const MEDIA_PURPOSES = ['GALLERY', 'CHAT', 'BROADCAST', 'WELCOME'] as const;
 
 export const MediaUploadInitBodySchema = z
   .strictObject({
@@ -41,7 +41,11 @@ export const MediaUploadInitBodySchema = z
     size_bytes: z.int().positive(),
     /** `CHAT` is "Upload Baru" in a conversation: it never reaches the gallery (US-036). */
     purpose: z.enum(MEDIA_PURPOSES).default('GALLERY'),
-    /** Required for `CHAT` (the conversation the file is for), not allowed for `GALLERY`. */
+    /**
+     * `BROADCAST` / `WELCOME` are "Upload Baru" in a broadcast (US-038) or the welcome message
+     * (US-040): never in the gallery by themselves.
+     * Required for `CHAT` (the conversation the file is for), not allowed for the others.
+     */
     conversation_id: z.uuid().optional(),
   })
   .refine((b) => (b.kind === 'PHOTO') === isPhotoType(b.content_type), {

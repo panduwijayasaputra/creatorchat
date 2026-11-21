@@ -113,6 +113,22 @@ describe('loadEnv', () => {
   });
 });
 
+describe('ACCESS_REMINDER_LEAD_DAYS (US-045)', () => {
+  it('defaults to 3 days and takes 1 to 30', () => {
+    expect(loadEnv(base).ACCESS_REMINDER_LEAD_DAYS).toBe(3);
+    expect(loadEnv({ ...base, ACCESS_REMINDER_LEAD_DAYS: '7' }).ACCESS_REMINDER_LEAD_DAYS).toBe(7);
+    expect(loadEnv({ ...base, ACCESS_REMINDER_LEAD_DAYS: '30' }).ACCESS_REMINDER_LEAD_DAYS).toBe(
+      30,
+    );
+  });
+
+  it('refuses 0, 31, a fraction and text', () => {
+    for (const bad of ['0', '31', '2.5', 'soon', '-1']) {
+      expect(() => loadEnv({ ...base, ACCESS_REMINDER_LEAD_DAYS: bad }), bad).toThrow();
+    }
+  });
+});
+
 describe('getIntegrationStatus', () => {
   it('treats placeholders as unconfigured', () => {
     const env = loadEnv({

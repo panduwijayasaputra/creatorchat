@@ -71,11 +71,21 @@ describe('Mini App routes', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Profil');
   });
 
-  it.each(['/broadcast'])('shows the creator shell with the placeholder at %s', async (path) => {
-    await renderAt(path, { api: createFakeMiniappApi({ me: [maya] }) });
+  it('shows the creator shell with the real broadcast composer (not a placeholder) at /broadcast', async () => {
+    await renderAt('/broadcast', { api: createFakeMiniappApi({ me: [maya] }) });
     expect(screen.getByRole('navigation', { name: 'Navigasi creator' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Navigasi utama' })).toBeNull();
-    expect(screen.getByTestId('not-implemented')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Broadcast' })).toBeInTheDocument();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
+  });
+
+  it('shows the real welcome message page, full screen without navigation, at /settings/welcome', async () => {
+    await renderAt('/settings/welcome', { api: createFakeMiniappApi({ me: [maya] }) });
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Pesan selamat datang' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Navigasi creator' })).toBeNull();
+    expect(screen.queryByTestId('not-implemented')).toBeNull();
   });
 
   it('shows the creator shell with the real gallery (not a placeholder) at /gallery', async () => {

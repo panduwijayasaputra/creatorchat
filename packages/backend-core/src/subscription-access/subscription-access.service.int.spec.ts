@@ -92,7 +92,9 @@ describe('grant', () => {
 
     expect(event.auditLogId).toBe(audit.id);
 
-    const outbox = await prisma.outboxEvent.findFirstOrThrow();
+    const outbox = await prisma.outboxEvent.findFirstOrThrow({
+      where: { type: 'subscription.granted' },
+    });
     expect(outbox).toMatchObject({
       type: 'subscription.granted',
       status: 'PENDING',
@@ -187,11 +189,60 @@ describe('grant', () => {
     expect((await grant(adminId, creator.id)).kind).toBe('not_found');
   });
 
+  it('a first grant also asks for the welcome message, with ids only', async () => {
+    const { user, creator } = await setup();
+    await grant(user.id, creator.id);
+    const sub = await prisma.subscription.findFirstOrThrow();
+    const events = await prisma.outboxEvent.findMany({ where: { type: 'welcome.requested' } });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      aggregateType: 'subscription',
+      aggregateId: sub.id,
+      status: 'PENDING',
+      dedupeKey: `welcome:${creator.id}:${user.id}`,
+      payload: { subscription_id: sub.id, customer_id: user.id, creator_id: creator.id },
+    });
+    expect(JSON.stringify(events[0]?.payload)).not.toContain('Kompensasi');
+  });
+
+  it("a grant for a second creator asks for that creator's welcome message too", async () => {
+    const first = await setup();
+    await grant(first.user.id, first.creator.id);
+    const other = await makeCreator();
+    await grant(first.user.id, other.id);
+    const keys = (await prisma.outboxEvent.findMany({ where: { type: 'welcome.requested' } })).map(
+      (e) => e.dedupeKey,
+    );
+    expect(keys.sort()).toEqual(
+      [
+        `welcome:${first.creator.id}:${first.user.id}`,
+        `welcome:${other.id}:${first.user.id}`,
+      ].sort(),
+    );
+  });
+
+  it('extend, revoke and a re-grant after an expiry or a revoke ask for no welcome message', async () => {
+    const { user, creator, sub } = await granted();
+    await service.extend(user.id, sub.id, { durationDays: 10 }, ctx());
+    await service.revoke(user.id, sub.id, ctx('Pelanggaran.'));
+    await grant(user.id, creator.id); // after the revoke
+    now = days(90);
+    await grant(user.id, creator.id); // after the expiry
+    expect(await prisma.outboxEvent.count({ where: { type: 'welcome.requested' } })).toBe(1);
+  });
+
+  it('two parallel first grants ask once', async () => {
+    const { user, creator } = await setup();
+    await Promise.all([grant(user.id, creator.id), grant(user.id, creator.id)]);
+    expect(await prisma.outboxEvent.count({ where: { type: 'welcome.requested' } })).toBe(1);
+  });
+
   it('writes exactly one row, event and conversation for two parallel grants', async () => {
     const { user, creator } = await setup();
     const results = await Promise.all([grant(user.id, creator.id), grant(user.id, creator.id)]);
     expect(results.map((r) => r.kind).sort()).toEqual(['ok', 'subscription_active']);
-    expect(await counts()).toEqual({ subs: 1, events: 1, audit: 1, outbox: 1, conv: 1 });
+    // the access event and, because it is the first access, the request for the welcome message
+    expect(await counts()).toEqual({ subs: 1, events: 1, audit: 1, outbox: 2, conv: 1 });
   });
 
   it('rolls everything back when a step fails', async () => {

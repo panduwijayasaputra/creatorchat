@@ -25,6 +25,7 @@ const settings = (over: Record<string, unknown> = {}) => ({
   profile: salsa,
   public_code: 'k4m5x2qa',
   bio_link: 'https://t.me/TestBot?start=c_k4m5x2qa',
+  welcome_enabled: false,
   ...over,
 });
 
@@ -87,6 +88,24 @@ describe('/settings (creator)', () => {
     expect(screen.queryByText('Tersimpan')).toBeNull();
     expect(screen.queryByText('Aktif')).toBeNull();
     expect(screen.queryByText(/Rp\d/)).toBeNull();
+  });
+
+  it('shows "Mati" on the welcome message row while it is off and "Aktif" once it is on (US-040)', async () => {
+    mount();
+    const row = (await screen.findByText('Pesan selamat datang')).closest('a') as HTMLElement;
+    expect(within(row).getByText('Mati')).toBeInTheDocument();
+    expect(row).toHaveAttribute('href', '/settings/welcome');
+    cleanup();
+    mount({
+      api: createFakeMiniappApi({
+        login: [salsa],
+        me: [salsa],
+        creatorSettings: [settings({ welcome_enabled: true })],
+      }),
+    });
+    const on = (await screen.findByText('Pesan selamat datang')).closest('a') as HTMLElement;
+    expect(within(on).getByText('Aktif')).toBeInTheDocument();
+    expect(within(on).queryByText('Mati')).toBeNull();
   });
 
   it('Pengaturan is the current page in the creator navigation', async () => {

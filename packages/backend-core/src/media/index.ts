@@ -6,3 +6,4 @@ export * from './customer-gallery.service.js';
 export * from './admin-creator-gallery.service.js';
 export * from './attachments.js';
 export * from './chat-media.service.js';
+export * from './gallery-membership.js';

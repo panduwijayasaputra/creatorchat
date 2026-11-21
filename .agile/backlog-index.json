@@ -332,6 +332,78 @@
       "title": "Customer receives and opens chat media",
       "status": "ready_for_uat",
       "priority": "high"
+    },
+    {
+      "id": "US-038",
+      "feature": "broadcast",
+      "phase": "E",
+      "file": "features/broadcast/US-038-creator-send-broadcast.md",
+      "title": "Creator composes and sends a broadcast",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-039",
+      "feature": "broadcast",
+      "phase": "E",
+      "file": "features/broadcast/US-039-broadcast-delivery.md",
+      "title": "Broadcast delivery to every active subscriber",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-040",
+      "feature": "welcome-message",
+      "phase": "E",
+      "file": "features/welcome-message/US-040-creator-set-welcome-message.md",
+      "title": "Creator sets the welcome message",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-041",
+      "feature": "welcome-message",
+      "phase": "E",
+      "file": "features/welcome-message/US-041-welcome-message-delivery.md",
+      "title": "Welcome message delivered once to each new subscriber",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-042",
+      "feature": "telegram-notifications",
+      "phase": "E",
+      "file": "features/telegram-notifications/US-042-message-notifications.md",
+      "title": "New message and broadcast notifications",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-043",
+      "feature": "telegram-notifications",
+      "phase": "E",
+      "file": "features/telegram-notifications/US-043-customer-notification-settings.md",
+      "title": "Customer notification settings and per-creator mute",
+      "status": "ready_for_uat",
+      "priority": "medium"
+    },
+    {
+      "id": "US-044",
+      "feature": "telegram-notifications",
+      "phase": "E",
+      "file": "features/telegram-notifications/US-044-access-activated-notification.md",
+      "title": "Access activated notification",
+      "status": "ready_for_uat",
+      "priority": "high"
+    },
+    {
+      "id": "US-045",
+      "feature": "telegram-notifications",
+      "phase": "E",
+      "file": "features/telegram-notifications/US-045-access-reminder-and-expiry.md",
+      "title": "Access reminder and access ended notifications",
+      "status": "ready_for_uat",
+      "priority": "medium"
     }
   ]
 }

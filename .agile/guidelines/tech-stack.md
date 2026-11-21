@@ -160,6 +160,12 @@ Record each decision with date when made. `TBD` items must be resolved (with the
 | Product name, bot username, domains | TBD — open input | Placeholders only (design uses "Creator Chat", `CreatorChatBot` as samples) |
 | Claude Design handoff location | Decided 2026-11-14 | `designs/creator-chat-design-handoff/design/` — see `design-integration.md` |
 | Design vs brief conflicts (AI disclosure, AI memory, price, welcome message, blur gallery, timezone) | Decided 2026-11-14 | See "Resolved Conflicts" in `design-integration.md` |
+| Telegram message notifications: presence | Decided 2026-11-21 (US-042) | No presence service. `message.created` events are claimed after a 30 s delay (`OutboxDispatcher.minAgeMs`); a notification is skipped when the recipient's read cursor already covers the message, and bursts are coalesced through `notification_state.last_notified_seq`. Deviation from brief §9 ("fresh presence"): a real Redis presence heartbeat remains a later option |
+| Shared Telegram delivery runner | Decided 2026-11-21 (US-044) | `TelegramDeliveryRunner` + `NotificationRouter` (handlers per outbox event type) replace the single-purpose US-013 notifier; retries stay in PostgreSQL |
+| Access reminder lead time | Decided 2026-11-21 (US-045) | 3 days before `ends_at`, `ACCESS_REMINDER_LEAD_DAYS`; scanner in the worker (60 s loop, transaction-scoped advisory lock) writes outbox events deduped per subscription period; ended notices look back 3 days. Built US-045 |
+| Broadcast media | Decided 2026-11-21 (US-038) | One photo or video required, text optional; new upload purposes `BROADCAST` and `WELCOME`; "Simpan juga ke galeri" creates the gallery item at send time |
+| Welcome message trigger | Decided 2026-11-21 (US-041) | Separate outbox event `welcome.requested` written by the grant that creates the subscription row; the switch is read at delivery (no retroactive welcome) |
+| Per-creator mute UI | Open (design gap, 2026-11-21) | API and storage planned in US-042/US-043; the control stays unbuilt until the designer places "Bisukan" |
 
 ### Pinned Versions (2026-11-15)
 

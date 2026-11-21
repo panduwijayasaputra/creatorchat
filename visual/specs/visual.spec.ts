@@ -2163,6 +2163,128 @@ const items: Item[] = [
       locate: (p) => p.locator('body > div').first(),
     },
   })),
+  // ---- Creator broadcast (US-038): the boards' illustrations are replaced by a flat stand-in image; the unread badge on the Inbox tab is a fixture of the boards ----
+  ...(
+    [
+      ['empty', 'CrBroadcast', 844, 'empty'],
+      ['pick', 'CrBroadcastPick', 844, 'pick'],
+      ['ready', 'CrBroadcastReady', 940, 'ready'],
+      ['upload', 'CrBroadcastUpload', 940, 'upload'],
+      ['upload-saved', 'CrBroadcastUploadSaved', 940, 'saved'],
+      ['confirm', 'CrBroadcastConfirm', 844, 'confirm'],
+      ['done', 'CrBroadcastDone', 844, 'done'],
+    ] as const
+  ).map(([name, board, height, step]): Item => ({
+    name: `miniapp-broadcast-${name}`,
+    app: 'miniapp',
+    path: '/broadcast',
+    viewport: { width: 390, height },
+    scale: 2,
+    session: 'creator',
+    mock: async (p) => {
+      await mockGallery(p, galleryAssets(12), 12);
+      await mockUploadFlow(p, 'done');
+      await p.route('**/v1/creator/broadcasts', (r) =>
+        r.fulfill({
+          status: 201,
+          json: {
+            id: '8d0e5f5c-1b6a-4f55-9a86-0c2a6f1d7e01',
+            status: 'QUEUED',
+            created_at: '2026-11-21T10:00:00.000Z',
+          },
+        }),
+      );
+    },
+    prepare: async (p) => {
+      await p.getByText('Pilih media untuk dikirim').waitFor();
+      if (step === 'empty') return;
+      if (step === 'upload' || step === 'saved') {
+        await p.setInputFiles('[data-testid="broadcast-file-input"]', {
+          name: 'foto.jpg',
+          mimeType: 'image/jpeg',
+          buffer: Buffer.alloc(2000, 1),
+        });
+        await p.getByRole('checkbox', { name: 'Simpan juga ke galeri' }).waitFor();
+        if (step === 'saved') await p.getByRole('checkbox').check();
+        return;
+      }
+      await p.getByRole('button', { name: /Pilih Galeri/ }).click();
+      await p.getByText('Pilih satu foto atau video dari galeri.').waitFor();
+      await p.getByRole('button', { name: 'Pilih foto' }).first().click();
+      if (step === 'pick') return;
+      await p.getByRole('button', { name: 'Lanjut' }).click();
+      await p.getByText('Memakai media yang sama dari galeri. Tidak ada salinan baru.').waitFor();
+      if (step === 'ready') return;
+      await p.getByRole('button', { name: 'Kirim Broadcast' }).click();
+      await p.getByRole('dialog').waitFor();
+      if (step === 'confirm') return;
+      await p.getByRole('dialog').getByRole('button', { name: 'Kirim Broadcast' }).click();
+      await p.getByText('Broadcast terkirim ke semua subscriber aktif').waitFor();
+    },
+    actual: (p) => p.locator('#root > div').first(),
+    reference: {
+      board,
+      png: `miniapp/${board}.png`,
+      locate: (p) => p.locator('body > div').first(),
+    },
+  })),
+  // ---- Creator welcome message (US-040): the boards' illustrations are replaced by a flat stand-in image ----
+  ...(
+    [
+      ['empty', 'CrWelcome', 1180, 'empty'],
+      ['pick', 'CrWelcomePick', 844, 'pick'],
+      ['gallery', 'CrWelcomeGallery', 1180, 'gallery'],
+      ['upload', 'CrWelcomeUpload', 1180, 'upload'],
+    ] as const
+  ).map(([name, board, height, step]): Item => ({
+    name: `miniapp-welcome-${name}`,
+    app: 'miniapp',
+    path: '/settings/welcome',
+    viewport: { width: 390, height },
+    scale: 2,
+    session: 'creator',
+    mock: async (p) => {
+      await mockGallery(p, galleryAssets(12), 12);
+      await mockUploadFlow(p, 'done');
+      await p.route('**/v1/creator/welcome-message', (r) =>
+        r.fulfill({
+          status: 200,
+          json: {
+            enabled: true,
+            body: 'Halo, selamat datang! Terima kasih sudah bergabung. Di sini kamu bisa tanya apa saja soal masak dan roti. Aku senang kenalan sama kamu.',
+            media: null,
+          },
+        }),
+      );
+    },
+    prepare: async (p) => {
+      await p.getByText('Belum ada media').waitFor();
+      if (step === 'empty') return;
+      if (step === 'upload') {
+        await p.setInputFiles('[data-testid="welcome-file-input"]', {
+          name: 'foto.jpg',
+          mimeType: 'image/jpeg',
+          buffer: Buffer.alloc(2000, 1),
+        });
+        await p
+          .getByText('Media ini hanya tersimpan di pesan selamat datang. Tidak masuk ke galeri.')
+          .waitFor();
+        return;
+      }
+      await p.getByRole('button', { name: /Pilih Galeri/ }).click();
+      await p.getByText('Pilih satu foto atau video dari galeri.').waitFor();
+      await p.getByRole('button', { name: 'Pilih foto' }).first().click();
+      if (step === 'pick') return;
+      await p.getByRole('button', { name: 'Lanjut' }).click();
+      await p.getByText('Memakai media yang sama dari galeri. Tidak ada salinan baru.').waitFor();
+    },
+    actual: (p) => p.locator('#root > div').first(),
+    reference: {
+      board,
+      png: `miniapp/${board}.png`,
+      locate: (p) => p.locator('body > div').first(),
+    },
+  })),
   // ---- Customer chat viewer (US-037) ----
   ...(
     [
@@ -2706,6 +2828,18 @@ const items: Item[] = [
           json: { ...MINIAPP_USER, display_name: 'Maya Lestari', telegram_username: 'mayalestari' },
         }),
       );
+      // US-043: the switches work now, so they wait for the server's (default) answer.
+      await p.route('**/v1/me/notification-preferences', (r) =>
+        r.fulfill({ status: 200, json: { messages_enabled: true, show_content: false } }),
+      );
+    },
+    prepare: async (p) => {
+      await p.getByRole('switch', { name: 'Notifikasi pesan' }).waitFor();
+      await p.waitForFunction(() =>
+        [...document.querySelectorAll('[role="switch"]')].every(
+          (el) => !(el as HTMLButtonElement).disabled,
+        ),
+      );
     },
     actual: (p) => p.locator('#root > div').first(),
     reference: {
@@ -2925,6 +3059,8 @@ const items: Item[] = [
             profile,
             public_code: 'salsa234',
             bio_link: 'https://t.me/CreatorChatBot?start=c_salsa234',
+            // the board shows the welcome message row as "Aktif" (US-040)
+            welcome_enabled: true,
           },
         }),
       );

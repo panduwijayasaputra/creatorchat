@@ -163,6 +163,7 @@ describe('Langganan contracts (US-025)', () => {
     avatar_url: null,
     creator_available: true,
     conversation_id: null,
+    muted: false,
   };
   const states = [
     { state: 'ACTIVE', ends_at: '2026-11-27T16:59:59.000Z' },
@@ -222,6 +223,24 @@ describe('Langganan contracts (US-025)', () => {
   });
 });
 
+describe('muted on a Langganan card (US-043)', () => {
+  const card = {
+    public_code: 'k4m5x2qa',
+    display_name: 'Salsa',
+    avatar_url: null,
+    creator_available: true,
+    conversation_id: null,
+    access: { state: 'ACTIVE', ends_at: '2026-11-27T16:59:59.000Z' },
+  };
+
+  it('is a required boolean', () => {
+    expect(SubscriptionItemSchema.safeParse({ ...card, muted: true }).success).toBe(true);
+    expect(SubscriptionItemSchema.safeParse({ ...card, muted: false }).success).toBe(true);
+    expect(SubscriptionItemSchema.safeParse(card).success).toBe(false);
+    expect(SubscriptionItemSchema.safeParse({ ...card, muted: 'yes' }).success).toBe(false);
+  });
+});
+
 describe('conversation_id on profile and Langganan (US-027)', () => {
   const id = '0d9b6f0e-7f0c-4a53-9d0c-2b3b5c1a9e33';
   const profile = { ...base, access: { state: 'GUEST' } };
@@ -248,6 +267,7 @@ describe('conversation_id on profile and Langganan (US-027)', () => {
       avatar_url: null,
       access: { state: 'ACTIVE', ends_at: '2026-11-27T16:59:59.000Z' },
       creator_available: true,
+      muted: false,
     };
     expect(SubscriptionItemSchema.safeParse({ ...card, conversation_id: id }).success).toBe(true);
     expect(SubscriptionItemSchema.safeParse({ ...card, conversation_id: null }).success).toBe(true);

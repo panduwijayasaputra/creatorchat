@@ -10,3 +10,9 @@ export const CREATOR_CHAT = Symbol('CREATOR_CHAT');
 
 /** DI token for the creator's read cursor (`ConversationReadService`, US-030). */
 export const CREATOR_READ = Symbol('CREATOR_READ');
+
+/** DI token for sending a broadcast (`BroadcastService`, US-038). */
+export const CREATOR_BROADCAST = Symbol('CREATOR_BROADCAST');
+
+/** DI token for the creator's welcome message (`WelcomeMessageService`, US-040). */
+export const CREATOR_WELCOME = Symbol('CREATOR_WELCOME');

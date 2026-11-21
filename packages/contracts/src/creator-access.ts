@@ -116,6 +116,8 @@ export const SubscriptionItemSchema = z.strictObject({
   creator_available: z.boolean(),
   /** The viewer's own conversation with this creator, or null (US-027). */
   conversation_id: z.uuid().nullable(),
+  /** The viewer muted this creator's message and broadcast notifications (US-043). */
+  muted: z.boolean(),
 });
 export type SubscriptionItem = z.infer<typeof SubscriptionItemSchema>;
 

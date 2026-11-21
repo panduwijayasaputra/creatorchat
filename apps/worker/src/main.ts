@@ -2,8 +2,10 @@ import { EnvError, loadEnv } from '@creatorchat/backend-core';
 import { createPrismaClient } from '@creatorchat/db';
 import { Redis } from 'ioredis';
 import { createLogger } from './logger.js';
+import { startBroadcast } from './broadcast/broadcast.js';
 import { startMedia } from './media/media.js';
 import { startNotifications } from './notifications.js';
+import { startWelcome } from './welcome/welcome.js';
 import { startRealtime } from './realtime.js';
 import { createWorker } from './worker.js';
 
@@ -30,6 +32,8 @@ async function main(): Promise<void> {
   const notifications = startNotifications({ env, prisma, logger });
   const realtime = startRealtime({ env, prisma, logger });
   const media = await startMedia({ env, prisma, logger });
+  const broadcast = startBroadcast({ env, prisma, logger });
+  const welcome = startWelcome({ env, prisma, logger });
 
   const worker = createWorker({
     env,
@@ -40,6 +44,8 @@ async function main(): Promise<void> {
       await notifications?.stop();
       await realtime.stop();
       await media?.stop();
+      await broadcast.stop();
+      await welcome.stop();
       redis.disconnect();
       await prisma.$disconnect();
     },

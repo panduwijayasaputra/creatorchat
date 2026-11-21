@@ -18,12 +18,27 @@ import { formatDateTime } from '../format/date-time';
 import { BottomToast, useFlashMessage } from '../components/BottomToast';
 import { botUrl, openTelegramLink } from '../telegram/webapp';
 import { PROFILE_GAP_COPY } from './profile-copy';
+import { DEFAULT_PREFERENCES, useNotificationPreferences } from './useNotificationPreferences';
 import styles from './profile.module.css';
 
 /** `Profile` board: the signed-in USER's profile, creator invitation, notifications, privacy and help. */
-export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestState'> }) {
+export function ProfilePage({
+  api,
+}: {
+  api: Pick<
+    MiniappApi,
+    'getCreatorRequestState' | 'getNotificationPreferences' | 'updateNotificationPreferences'
+  >;
+}) {
   const { state } = useAuth();
   const [flash, showFlash] = useFlashMessage();
+  const preferences = useNotificationPreferences(api, () =>
+    showFlash(PROFILE_GAP_COPY.notificationSaveFailed),
+  );
+  const values =
+    preferences.state.status === 'ready' ? preferences.state.values : DEFAULT_PREFERENCES;
+  // The switches wait for the server's answer; if it never comes they stay as they are.
+  const switchesReady = preferences.state.status === 'ready';
   // The server decides which card shows (pending, blocked, rejected); until it answers, or if it
   // cannot, the normal invitation stays. The submit call re-checks the rules, so a missed state
   // is refused there.
@@ -132,13 +147,17 @@ export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestS
 
       <h2 className={styles.sectionLabel}>Notifikasi</h2>
       <section className={styles.group} aria-label="Notifikasi">
-        {/* Not saved until Phase E: shown in the designed state, not interactive. */}
         <div className={styles.toggleRow}>
           <div className={styles.toggleText}>
             <div className={styles.rowTitle}>Notifikasi pesan</div>
             <div className={styles.rowHint}>Kabar saat creator membalas.</div>
           </div>
-          <Switch checked label="Notifikasi pesan" disabled />
+          <Switch
+            checked={values.messages_enabled}
+            label="Notifikasi pesan"
+            disabled={!switchesReady}
+            onChange={(checked) => preferences.toggle('messages_enabled', checked)}
+          />
         </div>
         <div className={styles.divider} />
         <div className={styles.toggleRow}>
@@ -146,7 +165,12 @@ export function ProfilePage({ api }: { api: Pick<MiniappApi, 'getCreatorRequestS
             <div className={styles.rowTitle}>Tampilkan isi pesan</div>
             <div className={styles.rowHint}>Mati secara default. Isi pesan disembunyikan.</div>
           </div>
-          <Switch checked={false} label="Tampilkan isi pesan di notifikasi" disabled />
+          <Switch
+            checked={values.show_content}
+            label="Tampilkan isi pesan"
+            disabled={!switchesReady}
+            onChange={(checked) => preferences.toggle('show_content', checked)}
+          />
         </div>
       </section>
 

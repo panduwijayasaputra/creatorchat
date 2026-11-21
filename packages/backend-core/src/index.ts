@@ -26,3 +26,6 @@ export * from './creator-chat/index.js';
 export * from './creator-inbox/index.js';
 export * from './realtime/index.js';
 export * from './media/index.js';
+export * from './broadcast/index.js';
+export * from './notification-preferences/index.js';
+export * from './welcome-message/index.js';

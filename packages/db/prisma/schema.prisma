@@ -54,6 +54,23 @@ enum MediaState {
 enum MediaPurpose {
   GALLERY
   CHAT
+  /// "Upload Baru" in a broadcast (US-038): never in the gallery unless the creator ticks the box.
+  BROADCAST
+  /// "Upload Baru" in the welcome message (US-040): never in the gallery.
+  WELCOME
+}
+
+enum BroadcastStatus {
+  QUEUED
+  FANNING_OUT
+  COMPLETED
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  DELIVERED
+  SKIPPED
+  FAILED
 }
 
 enum MessageOrigin {
@@ -128,15 +145,20 @@ model User {
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  sessions            Session[]
-  creator             Creator?
-  creatorApplications CreatorApplication[]
-  subscriptions       Subscription[]
-  accessRequests      AccessRequest[]
-  conversations       Conversation[]
-  messages            Message[]
-  conversationReads   ConversationRead[]
-  notifications       NotificationDelivery[]
+  sessions               Session[]
+  creator                Creator?
+  creatorApplications    CreatorApplication[]
+  subscriptions          Subscription[]
+  accessRequests         AccessRequest[]
+  conversations          Conversation[]
+  messages               Message[]
+  conversationReads      ConversationRead[]
+  notifications          NotificationDelivery[]
+  broadcastsReceived     BroadcastRecipient[]
+  notificationPreference NotificationPreference?
+  creatorMutes           CreatorMute[]
+  notificationStates     NotificationState[]
+  welcomeDeliveries      WelcomeDelivery[]
 
   @@map("users")
 }
@@ -175,12 +197,16 @@ model Creator {
   createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Restrict)
-  subscriptions  Subscription[]
-  conversations  Conversation[]
-  accessRequests AccessRequest[]
-  mediaAssets    MediaAsset[]
-  galleryItems   GalleryItem[]
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  subscriptions     Subscription[]
+  conversations     Conversation[]
+  accessRequests    AccessRequest[]
+  mediaAssets       MediaAsset[]
+  galleryItems      GalleryItem[]
+  broadcasts        Broadcast[]
+  mutedBy           CreatorMute[]
+  welcomeMessage    CreatorWelcomeMessage?
+  welcomeDeliveries WelcomeDelivery[]
 
   @@map("creators")
 }
@@ -213,10 +239,12 @@ model MediaAsset {
   readyAt        DateTime?    @map("ready_at") @db.Timestamptz(3)
   updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  creator      Creator             @relation(fields: [creatorId], references: [id], onDelete: Restrict)
-  conversation Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Restrict)
-  galleryItems GalleryItem[]
-  attachments  MessageAttachment[]
+  creator         Creator                 @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  conversation    Conversation?           @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  galleryItems    GalleryItem[]
+  attachments     MessageAttachment[]
+  broadcasts      Broadcast[]
+  welcomeMessages CreatorWelcomeMessage[]
 
   @@unique([creatorId, clientUploadId])
   @@index([state, createdAt])
@@ -325,11 +353,12 @@ model Conversation {
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  customer    User               @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  creator     Creator            @relation(fields: [creatorId], references: [id], onDelete: Restrict)
-  messages    Message[]
-  reads       ConversationRead[]
-  mediaAssets MediaAsset[]
+  customer           User                @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  creator            Creator             @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  messages           Message[]
+  reads              ConversationRead[]
+  mediaAssets        MediaAsset[]
+  notificationStates NotificationState[]
 
   @@unique([customerId, creatorId])
   @@index([creatorId])
@@ -362,11 +391,16 @@ model Message {
   body            String?
   clientMessageId String        @map("client_message_id") @db.Uuid
   seq             Int
+  /// Set when the message was written for a broadcast (US-039); at most one per broadcast and conversation.
+  broadcastId     String?       @map("broadcast_id") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  conversation Conversation        @relation(fields: [conversationId], references: [id], onDelete: Restrict)
-  sender       User                @relation(fields: [senderUserId], references: [id], onDelete: Restrict)
-  attachments  MessageAttachment[]
+  conversation       Conversation        @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  sender             User                @relation(fields: [senderUserId], references: [id], onDelete: Restrict)
+  broadcast          Broadcast?          @relation(fields: [broadcastId], references: [id], onDelete: Restrict)
+  attachments        MessageAttachment[]
+  broadcastRecipient BroadcastRecipient?
+  welcomeDelivery    WelcomeDelivery?
 
   @@unique([conversationId, seq])
   @@unique([conversationId, senderUserId, clientMessageId])
@@ -530,4 +564,128 @@ model MessageAttachment {
   @@unique([messageId, position])
   @@index([assetId])
   @@map("message_attachments")
+}
+
+/// One broadcast: a photo or video (and an optional text) for every active subscriber (US-038). The
+/// worker snapshots the recipients and writes one message per conversation (US-039).
+model Broadcast {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId         String          @map("creator_id") @db.Uuid
+  /// Made by the client; (creator, client_broadcast_id) makes a retried send return the same row.
+  clientBroadcastId String          @map("client_broadcast_id") @db.Uuid
+  assetId           String          @map("asset_id") @db.Uuid
+  /// 1–2000 characters when present (CHECK in the migration).
+  body              String?
+  saveToGallery     Boolean         @default(false) @map("save_to_gallery")
+  status            BroadcastStatus @default(QUEUED)
+  snapshotAt        DateTime?       @map("snapshot_at") @db.Timestamptz(3)
+  recipientCount    Int?            @map("recipient_count")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  completedAt       DateTime?       @map("completed_at") @db.Timestamptz(3)
+
+  creator    Creator              @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  asset      MediaAsset           @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  recipients BroadcastRecipient[]
+  messages   Message[]
+
+  @@unique([creatorId, clientBroadcastId])
+  @@index([status, createdAt])
+  @@index([assetId])
+  @@map("broadcasts")
+}
+
+/// A customer in a broadcast's snapshot. `id` is the deterministic client_message_id of the message
+/// written for this recipient.
+model BroadcastRecipient {
+  id          String                   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  broadcastId String                   @map("broadcast_id") @db.Uuid
+  customerId  String                   @map("customer_id") @db.Uuid
+  status      BroadcastRecipientStatus @default(PENDING)
+  messageId   String?                  @unique @map("message_id") @db.Uuid
+  /// A short code, never free text.
+  reason      String?
+  attempts    Int                      @default(0)
+  updatedAt   DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Restrict)
+  customer  User      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  message   Message?  @relation(fields: [messageId], references: [id], onDelete: Restrict)
+
+  @@id([broadcastId, customerId])
+  @@index([broadcastId, status])
+  @@map("broadcast_recipients")
+}
+
+/// A user's Telegram notification choices (US-042 reads, US-043 writes). No row = the defaults.
+model NotificationPreference {
+  userId          String   @id @map("user_id") @db.Uuid
+  messagesEnabled Boolean  @default(true) @map("messages_enabled")
+  /// Show a shortened message text in the bot message; off by default (brief §9).
+  showContent     Boolean  @default(false) @map("show_content")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("notification_preferences")
+}
+
+/// A customer muted one creator.
+model CreatorMute {
+  userId    String   @map("user_id") @db.Uuid
+  creatorId String   @map("creator_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+
+  @@id([userId, creatorId])
+  @@map("creator_mutes")
+}
+
+/// Up to which `messages.seq` a participant was already notified in a conversation (US-042).
+model NotificationState {
+  conversationId  String   @map("conversation_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  lastNotifiedSeq Int      @default(0) @map("last_notified_seq")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([conversationId, userId])
+  @@map("notification_state")
+}
+
+/// A creator's welcome message (US-040): sent once to each new subscriber (US-041). The text is
+/// required while `enabled`; the media is a gallery asset or a WELCOME upload.
+model CreatorWelcomeMessage {
+  creatorId String   @id @map("creator_id") @db.Uuid
+  enabled   Boolean  @default(false)
+  /// 1–2000 characters (CHECK in the migration); required while `enabled`.
+  body      String?
+  assetId   String?  @map("asset_id") @db.Uuid
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  creator Creator     @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  asset   MediaAsset? @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@index([assetId])
+  @@map("creator_welcome_messages")
+}
+
+/// The welcome message that went (or is going) to one customer of one creator (US-041): at most one
+/// per pair, ever. `id` is the message's client_message_id; `message_id` is set once it is written.
+model WelcomeDelivery {
+  id         String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId  String   @map("creator_id") @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  messageId  String?  @unique @map("message_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  creator  Creator  @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  customer User     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  message  Message? @relation(fields: [messageId], references: [id], onDelete: Restrict)
+
+  @@id([creatorId, customerId])
+  @@map("welcome_deliveries")
 }

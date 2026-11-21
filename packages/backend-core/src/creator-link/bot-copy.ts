@@ -17,4 +17,14 @@ export const BOT_COPY = {
   requestRejectedIntro: 'Permintaanmu menjadi creator belum bisa disetujui.',
   requestRejectedReason: 'Alasan dari admin:',
   requestRejectedOutro: 'Kamu bisa memperbaiki isian lalu mengajukan lagi.',
+  /**
+   * New chat messages and broadcasts (US-042). NOT designed: placeholder wording. `{nama}` is the
+   * sender, `{n}` the number of unread messages, `{pratinjau}` a shortened text (only when the
+   * customer turned "Tampilkan isi pesan" on; media-only messages show Foto / Video).
+   */
+  newMessage: 'Pesan baru dari {nama}.',
+  newMessages: '{n} pesan baru dari {nama}.',
+  newMessagePreview: '{nama}: {pratinjau}',
+  previewPhoto: 'Foto',
+  previewVideo: 'Video',
 } as const;

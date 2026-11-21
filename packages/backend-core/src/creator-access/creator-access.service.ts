@@ -28,6 +28,8 @@ export interface SubscriptionCard {
   creatorAvailable: boolean;
   /** The viewer's own conversation with this creator, or null (US-027). */
   conversationId: string | null;
+  /** The viewer muted this creator's message and broadcast notifications (US-043). */
+  muted: boolean;
 }
 
 export type ProfileOutcome =
@@ -175,7 +177,7 @@ export class CreatorAccessService {
       status: true,
       user: { select: { displayName: true, avatarUrl: true, status: true } },
     } as const;
-    const [subs, pending, conversations] = await Promise.all([
+    const [subs, pending, conversations, mutes] = await Promise.all([
       this.prisma.subscription.findMany({
         where: { customerId: userId },
         select: {
@@ -199,7 +201,9 @@ export class CreatorAccessService {
         where: { customerId: userId },
         select: { id: true, creatorId: true },
       }),
+      this.prisma.creatorMute.findMany({ where: { userId }, select: { creatorId: true } }),
     ]);
+    const mutedIds = new Set(mutes.map((m) => m.creatorId));
     const conversationOf = new Map(conversations.map((c) => [c.creatorId, c.id]));
     const subOf = new Map(subs.map((s) => [s.creatorId, s]));
     const pendingOf = new Map(pending.map((p) => [p.creatorId, p]));
@@ -219,6 +223,7 @@ export class CreatorAccessService {
         access,
         creatorAvailable: creator.status === 'ACTIVE' && creator.user.status === 'ACTIVE',
         conversationId: conversationOf.get(id) ?? null,
+        muted: mutedIds.has(id),
       });
     }
 

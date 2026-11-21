@@ -15,11 +15,28 @@ const profile = {
 };
 
 describe('CreatorSettingsResponseSchema', () => {
-  const ok = { profile, public_code: 'salsa234', bio_link: 'https://t.me/Bot_x?start=c_salsa234' };
+  const ok = {
+    profile,
+    public_code: 'salsa234',
+    bio_link: 'https://t.me/Bot_x?start=c_salsa234',
+    welcome_enabled: false,
+  };
 
   it('accepts a link or null', () => {
     expect(CreatorSettingsResponseSchema.safeParse(ok).success).toBe(true);
     expect(CreatorSettingsResponseSchema.safeParse({ ...ok, bio_link: null }).success).toBe(true);
+  });
+
+  it('needs welcome_enabled as a boolean (US-040)', () => {
+    expect(CreatorSettingsResponseSchema.safeParse({ ...ok, welcome_enabled: true }).success).toBe(
+      true,
+    );
+    const { welcome_enabled: _unused, ...without } = ok;
+    void _unused;
+    expect(CreatorSettingsResponseSchema.safeParse(without).success).toBe(false);
+    expect(CreatorSettingsResponseSchema.safeParse({ ...ok, welcome_enabled: 'yes' }).success).toBe(
+      false,
+    );
   });
 
   it('rejects extra keys and a non-URL link', () => {

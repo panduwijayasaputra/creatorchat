@@ -119,6 +119,7 @@ describe('GET /v1/creator/settings', () => {
     expect(body.profile).toMatchObject({ id: userId, role: 'CREATOR' });
     expect(body.public_code).toBe(code);
     expect(body.bio_link).toBe(`https://t.me/TestBot?start=c_${code}`);
+    expect(body.welcome_enabled).toBe(false);
   });
 
   it('gives each creator only their own code', async () => {

@@ -285,7 +285,9 @@ describe('history and previews', () => {
     const theirs = await customerChat.history(s.customer.id, s.conversation.id, { limit: 10 });
     if (theirs.kind !== 'ok') throw new Error(theirs.kind);
     expect(theirs.history.items[0]).toMatchObject({ type: 'MEDIA', body: null });
-    expect(theirs.history.items[0]?.attachments[0]).toMatchObject({ id, kind: 'PHOTO' });
+    // The customer gets the id of the attachment row (what the viewer takes), never the asset id.
+    const row = await prisma.messageAttachment.findFirstOrThrow({ where: { assetId: id } });
+    expect(theirs.history.items[0]?.attachments[0]).toMatchObject({ id: row.id, kind: 'PHOTO' });
     expect(theirs.history.conversation.access.state).toBe('EXPIRED');
   });
 

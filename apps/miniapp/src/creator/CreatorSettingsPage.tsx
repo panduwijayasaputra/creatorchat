@@ -34,9 +34,11 @@ interface RowProps {
   to?: string;
   /** External (Telegram) destination, opened through the WebApp when available. */
   href?: string;
+  /** The status shown before the chevron (`CrSettings`: "Aktif"). */
+  chip?: ReactNode;
 }
 
-function Row({ icon, title, hint, to, href }: RowProps) {
+function Row({ icon, title, hint, to, href, chip }: RowProps) {
   const body = (
     <>
       <span className={styles.disc}>{icon}</span>
@@ -44,6 +46,7 @@ function Row({ icon, title, hint, to, href }: RowProps) {
         <span className={styles.rowTitle}>{title}</span>
         {hint ? <span className={styles.rowHint}>{hint}</span> : null}
       </span>
+      {chip}
       {to || href ? (
         <ChevronRightIcon size={20} strokeWidth={2} className={styles.chevron} />
       ) : null}
@@ -112,7 +115,7 @@ export function CreatorSettingsPage({ api }: { api: Pick<MiniappApi, 'getCreator
     );
   }
 
-  const { profile, bio_link: bioLink } = load.settings;
+  const { profile, bio_link: bioLink, welcome_enabled: welcomeEnabled } = load.settings;
   const shownLink = bioLink?.replace(/^https:\/\//, '') ?? null;
 
   const copy = async () => {
@@ -192,6 +195,14 @@ export function CreatorSettingsPage({ api }: { api: Pick<MiniappApi, 'getCreator
             icon={<ChatIcon size={22} />}
             title="Pesan selamat datang"
             hint="Terkirim otomatis ke subscriber baru"
+            chip={
+              welcomeEnabled ? (
+                <StatusChip status="active" label="Aktif" />
+              ) : (
+                // design gap: the board only shows the switched-on state
+                <StatusChip status="none" label="Mati" />
+              )
+            }
           />
           <div className={styles.divider} />
           <Row to="/settings/price" icon={<BookmarkIcon size={22} />} title="Harga subscription" />

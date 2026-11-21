@@ -35,8 +35,12 @@ export interface UploadMediaOptions {
   api: UploadMediaApi;
   file: File;
   clientUploadId: string;
-  /** `CHAT` is "Upload Baru" in a conversation: it needs `conversationId` and never reaches the gallery. */
-  purpose?: 'GALLERY' | 'CHAT';
+  /**
+   * `CHAT` is "Upload Baru" in a conversation: it needs `conversationId` and never reaches the gallery.
+   * `BROADCAST` / `WELCOME` are "Upload Baru" in a broadcast / the welcome message: no conversation,
+   * and not in the gallery by themselves.
+   */
+  purpose?: 'GALLERY' | 'CHAT' | 'BROADCAST' | 'WELCOME';
   conversationId?: string;
   put?: PutFile;
   onProgress: (percent: number) => void;
@@ -70,7 +74,9 @@ export async function uploadMedia(o: UploadMediaOptions): Promise<MediaAssetView
     size_bytes: file.size,
     ...(o.purpose === 'CHAT'
       ? { purpose: 'CHAT' as const, conversation_id: o.conversationId as string }
-      : {}),
+      : o.purpose === 'BROADCAST' || o.purpose === 'WELCOME'
+        ? { purpose: o.purpose }
+        : {}),
   } as MediaUploadInitBody;
   try {
     const send = async () => {

@@ -153,7 +153,7 @@ describe('identity baseline: audit log', () => {
 });
 
 describe('identity baseline: scope', () => {
-  it('creates only the identity tables plus creators (US-005), creator requests and subscriptions (US-010), the outbox (US-012), access events and conversations (US-020), access requests (US-022), messages (US-026), conversation reads (US-028), media assets and gallery items (US-032), message attachments (US-036) and the Prisma migrations table', async () => {
+  it('creates only the identity tables plus creators (US-005), creator requests and subscriptions (US-010), the outbox (US-012), access events and conversations (US-020), access requests (US-022), messages (US-026), conversation reads (US-028), media assets and gallery items (US-032), message attachments (US-036), broadcasts and their recipients (US-038), notification preferences, mutes and state (US-042), welcome messages and their deliveries (US-040, US-041) and the Prisma migrations table', async () => {
     const rows = await prisma.$queryRaw<{ table_name: string }[]>`
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -163,20 +163,27 @@ describe('identity baseline: scope', () => {
       'access_requests',
       'admin_accounts',
       'audit_logs',
+      'broadcast_recipients',
+      'broadcasts',
       'conversation_reads',
       'conversations',
       'creator_applications',
+      'creator_mutes',
+      'creator_welcome_messages',
       'creators',
       'gallery_items',
       'media_assets',
       'message_attachments',
       'messages',
       'notification_deliveries',
+      'notification_preferences',
+      'notification_state',
       'outbox_events',
       'sessions',
       'subscription_events',
       'subscriptions',
       'users',
+      'welcome_deliveries',
     ]);
   });
 });

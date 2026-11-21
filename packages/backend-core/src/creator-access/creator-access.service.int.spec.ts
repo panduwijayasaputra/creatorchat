@@ -235,6 +235,23 @@ describe('subscriptions (Langganan, US-025)', () => {
     });
   });
 
+  it('marks a muted creator on its own card only, for the viewer who muted it (US-043)', async () => {
+    const raka = await user('Raka');
+    const other = await user('Maya');
+    const salsa = await creator('Salsa');
+    const kirana = await creator('Kirana');
+    await sub(raka.id, salsa.c.id, -5, 11);
+    await sub(raka.id, kirana.c.id, -5, 12);
+    await sub(other.id, salsa.c.id, -5, 11);
+    await prisma.creatorMute.create({ data: { userId: raka.id, creatorId: salsa.c.id } });
+    const mine = (await list(raka.id)).items;
+    expect(Object.fromEntries(mine.map((i) => [i.displayName, i.muted]))).toEqual({
+      Salsa: true,
+      Kirana: false,
+    });
+    expect((await list(other.id)).items.map((i) => i.muted)).toEqual([false]);
+  });
+
   it('orders inside each group: soonest end, oldest request, latest end, then name', async () => {
     const raka = await user('Raka');
     const a1 = await creator('A-late');
@@ -377,6 +394,7 @@ describe('subscriptions (Langganan, US-025)', () => {
       'conversationId',
       'creatorAvailable',
       'displayName',
+      'muted',
       'publicCode',
     ]);
   });

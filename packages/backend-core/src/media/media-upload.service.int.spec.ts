@@ -356,6 +356,10 @@ describe('MediaUploadService.cleanup', () => {
       where: { id: oldPending.asset.id },
       data: { createdAt: new Date(now.getTime() - CLEANUP_AFTER_MS - 1000) },
     });
+    // The rows are stamped by the wall clock; put them on the test clock so the test does not age.
+    await prisma.mediaAsset.update({ where: { id: recent.asset.id }, data: { createdAt: now } });
+    await prisma.$executeRaw`
+      UPDATE media_assets SET updated_at = ${now}::timestamptz WHERE id = ${failed.asset.id}::uuid`;
     const later = new Date(now.getTime() + CLEANUP_AFTER_MS + 60_000);
     // The FAILED row ages with the clock; READY and the recent PENDING must survive a check "now".
     expect(await service.cleanup(now)).toBe(1);
@@ -596,5 +600,131 @@ describe('chat uploads (purpose CHAT)', () => {
     const left = await prisma.mediaAsset.findMany({ select: { id: true } });
     expect(left.map((r) => r.id).sort()).toEqual([attached.id, recent.id].sort());
     expect(await storage.head(attached.key)).not.toBeNull();
+  });
+});
+
+describe('broadcast and welcome uploads (US-038)', () => {
+  const PURPOSES = ['BROADCAST', 'WELCOME'] as const;
+
+  async function readyAs(userId: string, purpose: 'BROADCAST' | 'WELCOME') {
+    const a = await initOk(userId, { purpose });
+    await put(a.asset.id, JPEG);
+    await service.complete(userId, a.asset.id);
+    const row = await prisma.mediaAsset.findUniqueOrThrow({ where: { id: a.asset.id } });
+    await service.markProcessed(a.asset.id, {
+      mime: 'image/jpeg',
+      sizeBytes: 900,
+      width: 10,
+      height: 10,
+      durationMs: null,
+      thumbKey: `${row.objectKey}/thumb.webp`,
+    });
+    return { id: a.asset.id, key: row.objectKey };
+  }
+
+  const ageReady = (id: string, ms: number) =>
+    prisma.$executeRaw`
+      UPDATE media_assets SET ready_at = ${new Date(now.getTime() - ms)}::timestamptz
+      WHERE id = ${id}::uuid`;
+
+  it('are stored with their purpose, no conversation, and become READY without a gallery item or a number', async () => {
+    const { user, creator } = await makeCreator();
+    for (const purpose of PURPOSES) {
+      const { id } = await readyAs(user.id, purpose);
+      const row = await prisma.mediaAsset.findUniqueOrThrow({ where: { id } });
+      expect(row).toMatchObject({ purpose, state: 'READY', conversationId: null });
+      expect(await prisma.galleryItem.count({ where: { assetId: id } })).toBe(0);
+    }
+    expect(
+      (await prisma.creator.findUniqueOrThrow({ where: { id: creator.id } })).lastGallerySeq,
+    ).toBe(0);
+  });
+
+  it('a gallery upload still gets its item and number next to them', async () => {
+    const { user, creator } = await makeCreator();
+    await readyAs(user.id, 'BROADCAST');
+    const p = await processed(user.id);
+    await service.markProcessed(p.id, p.meta);
+    expect(await prisma.galleryItem.findMany({ where: { creatorId: creator.id } })).toHaveLength(1);
+    expect(
+      (await prisma.creator.findUniqueOrThrow({ where: { id: creator.id } })).lastGallerySeq,
+    ).toBe(1);
+  });
+
+  it('an unused upload is cleaned up after a day, with its objects', async () => {
+    const { user } = await makeCreator();
+    for (const purpose of PURPOSES) {
+      const { id, key } = await readyAs(user.id, purpose);
+      await ageReady(id, CLEANUP_AFTER_MS + 1000);
+      expect(await service.cleanup()).toBe(1);
+      expect(await prisma.mediaAsset.findUnique({ where: { id } })).toBeNull();
+      expect(await storage.head(key)).toBeNull();
+    }
+  });
+
+  it('a recent unused upload is kept', async () => {
+    const { user } = await makeCreator();
+    const { id } = await readyAs(user.id, 'BROADCAST');
+    await ageReady(id, CLEANUP_AFTER_MS - 60_000);
+    expect(await service.cleanup()).toBe(0);
+    expect(await prisma.mediaAsset.findUnique({ where: { id } })).not.toBeNull();
+  });
+
+  it('an upload that the welcome message uses is never removed', async () => {
+    const { user, creator } = await makeCreator();
+    const used = await readyAs(user.id, 'WELCOME');
+    const unused = await readyAs(user.id, 'WELCOME');
+    await prisma.creatorWelcomeMessage.create({
+      data: { creatorId: creator.id, enabled: true, body: 'Halo', assetId: used.id },
+    });
+    await ageReady(used.id, CLEANUP_AFTER_MS * 3);
+    await ageReady(unused.id, CLEANUP_AFTER_MS * 3);
+    expect(await service.cleanup()).toBe(1);
+    expect(await prisma.mediaAsset.findUnique({ where: { id: used.id } })).not.toBeNull();
+    expect(await storage.head(used.key)).not.toBeNull();
+    expect(await prisma.mediaAsset.findUnique({ where: { id: unused.id } })).toBeNull();
+  });
+
+  it('an upload that a broadcast, a message or the gallery uses is never removed', async () => {
+    const { user, creator } = await makeCreator();
+    const forBroadcast = await readyAs(user.id, 'BROADCAST');
+    const forGallery = await readyAs(user.id, 'BROADCAST');
+    const forMessage = await readyAs(user.id, 'WELCOME');
+    await prisma.broadcast.create({
+      data: { creatorId: creator.id, clientBroadcastId: randomUUID(), assetId: forBroadcast.id },
+    });
+    await prisma.galleryItem.create({
+      data: { creatorId: creator.id, assetId: forGallery.id, seq: 1 },
+    });
+    const customer = await prisma.user.create({ data: { telegramId: n++, displayName: 'C' } });
+    const conversation = await prisma.conversation.create({
+      data: { customerId: customer.id, creatorId: creator.id },
+    });
+    await prisma.message.create({
+      data: {
+        conversationId: conversation.id,
+        senderUserId: user.id,
+        type: 'MEDIA',
+        body: null,
+        clientMessageId: randomUUID(),
+        seq: 1,
+        attachments: { create: { assetId: forMessage.id, position: 0 } },
+      },
+    });
+    for (const f of [forBroadcast, forGallery, forMessage])
+      await ageReady(f.id, CLEANUP_AFTER_MS * 3);
+    expect(await service.cleanup()).toBe(0);
+    for (const f of [forBroadcast, forGallery, forMessage]) {
+      expect(await prisma.mediaAsset.findUnique({ where: { id: f.id } })).not.toBeNull();
+      expect(await storage.head(f.key)).not.toBeNull();
+    }
+  });
+
+  it('a gallery upload is never cleaned up', async () => {
+    const { user } = await makeCreator();
+    const p = await processed(user.id);
+    await service.markProcessed(p.id, p.meta);
+    await prisma.$executeRaw`UPDATE media_assets SET ready_at = ${new Date(now.getTime() - CLEANUP_AFTER_MS * 5)}::timestamptz WHERE id = ${p.id}::uuid`;
+    expect(await service.cleanup()).toBe(0);
   });
 });

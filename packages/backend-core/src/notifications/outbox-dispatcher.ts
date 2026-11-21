@@ -1,10 +1,15 @@
-import type { PrismaClient } from '@creatorchat/db';
+import { Prisma, type PrismaClient } from '@creatorchat/db';
 import { backoffMs, MAX_ATTEMPTS } from './backoff.js';
 import type { JobQueue } from './job-queue.js';
 
 export interface OutboxDispatcherOptions {
   /** Only these event types are claimed; others are left for their own consumers. */
   handledTypes: readonly string[];
+  /**
+   * Per event type: do not claim the event before it is this old (ms since `created_at`). A delay
+   * gives the recipient time to read a chat before a notification is considered (US-042).
+   */
+  minAgeMs?: Readonly<Record<string, number>>;
   batchSize?: number;
   clock?: () => Date;
   staleEnqueuedMs?: number;
@@ -27,6 +32,7 @@ export class OutboxDispatcher {
   private readonly staleEnqueuedMs: number;
   private readonly staleSendingMs: number;
   private readonly handled: string[];
+  private readonly minAgeMs: [string, number][];
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -34,6 +40,9 @@ export class OutboxDispatcher {
     options: OutboxDispatcherOptions,
   ) {
     this.handled = [...options.handledTypes];
+    this.minAgeMs = Object.entries(options.minAgeMs ?? {}).filter(([type]) =>
+      this.handled.includes(type),
+    );
     this.batchSize = options.batchSize ?? 50;
     this.clock = options.clock ?? (() => new Date());
     this.staleEnqueuedMs = options.staleEnqueuedMs ?? 2 * 60_000;
@@ -48,11 +57,19 @@ export class OutboxDispatcher {
   async dispatch(): Promise<DispatchResult> {
     if (this.handled.length === 0) return { enqueued: 0, failed: 0 };
     const now = this.clock();
+    // "Not too young": one clause per delayed type, nothing at all when no type is delayed.
+    const tooYoung = this.minAgeMs.map(
+      ([type, ms]) =>
+        Prisma.sql`NOT (type = ${type} AND created_at > ${new Date(now.getTime() - ms)}::timestamptz)`,
+    );
+    const ageGuard =
+      tooYoung.length > 0 ? Prisma.sql`AND ${Prisma.join(tooYoung, ' AND ')}` : Prisma.empty;
     return this.prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<{ id: string; type: string }[]>`
         SELECT id::text AS id, type FROM outbox_events
         WHERE status = 'PENDING' AND available_at <= ${now}::timestamptz
           AND type = ANY(${this.handled}::text[])
+          ${ageGuard}
         ORDER BY available_at, created_at
         LIMIT ${this.batchSize}
         FOR UPDATE SKIP LOCKED`;

@@ -11,5 +11,7 @@ export const CreatorSettingsResponseSchema = z.strictObject({
   public_code: z.string(),
   /** `https://t.me/<bot>?start=c_<public_code>`; null while the bot username is not configured. */
   bio_link: z.url().nullable(),
+  /** The welcome message is switched on (the `Pesan selamat datang` row, US-040). */
+  welcome_enabled: z.boolean(),
 });
 export type CreatorSettingsResponse = z.infer<typeof CreatorSettingsResponseSchema>;

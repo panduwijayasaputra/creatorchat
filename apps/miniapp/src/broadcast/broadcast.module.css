@@ -1,0 +1,351 @@
+/* Values from designs/.../html/CrBroadcast.html, CrBroadcastReady.html, CrBroadcastUpload.html, CrBroadcastUploadSaved.html, CrBroadcastConfirm.html (390 px). */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.header {
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+
+.target {
+  margin: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--pink);
+}
+
+.targetTitle {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.targetText {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-2-pressed);
+}
+
+.body {
+  padding: 16px 20px 24px;
+}
+
+.bodyWithMedia {
+  padding-top: 12px;
+}
+
+.empty {
+  height: 190px;
+  box-sizing: border-box;
+  border: 1.5px dashed var(--field);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ink-2-pressed);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.options {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.optionGallery {
+  border: 0;
+  background: var(--pink);
+}
+
+.optionGallery:hover {
+  background: var(--pink-hover);
+}
+
+.optionUpload {
+  border: 1.5px solid var(--field);
+  background: var(--bg);
+}
+
+.optionUpload:hover {
+  background: var(--pink-soft);
+}
+
+.media {
+  position: relative;
+  height: 200px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #f3dacb;
+}
+
+.media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.duration {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px 0 6px;
+  border-radius: 12px;
+  background: rgba(48, 37, 44, 0.82);
+  color: #fff;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.changeRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--rose);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  height: 52px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1.5px solid var(--field);
+  border-radius: 16px;
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.field::placeholder {
+  color: var(--ink-2);
+}
+
+.fieldGap {
+  margin-top: 16px;
+}
+
+.save {
+  margin-top: 12px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.check input {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--rose);
+}
+
+.note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--pink-soft);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink);
+}
+
+.noteGap {
+  margin-top: 12px;
+}
+
+.noteUnderCheck {
+  margin-top: 4px;
+}
+
+.send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--rose);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.send:hover:not(:disabled) {
+  background: var(--rose-hover);
+}
+
+.send:disabled {
+  background: var(--pink);
+  color: var(--ink-2-pressed);
+  cursor: not-allowed;
+}
+
+.error {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--err-bg);
+  color: var(--err-fg);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.confirmSheet {
+  /* The board's sheet is 330 px tall with the content at the top. */
+  min-height: 330px;
+}
+
+.confirmText {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.confirmActions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.confirmSend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--rose);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.confirmSend:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.confirmCancel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  border: 1.5px solid var(--field);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.optionGallery:focus-visible,
+.optionUpload:focus-visible,
+.change:focus-visible,
+.field:focus-visible,
+.send:focus-visible,
+.check input:focus-visible,
+.confirmSend:focus-visible,
+.confirmCancel:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+
+.hidden {
+  display: none;
+}

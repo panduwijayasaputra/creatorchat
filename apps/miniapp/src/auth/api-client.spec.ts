@@ -187,6 +187,7 @@ describe('createMiniappApi.listSubscriptions (US-025)', () => {
     access: { state: 'ACTIVE', ends_at: '2026-11-27T16:59:59.000Z' },
     creator_available: true,
     conversation_id: null,
+    muted: false,
   };
 
   it('GETs with the Bearer token and no body and validates the answer', async () => {
@@ -435,6 +436,7 @@ describe('createMiniappApi creator calls', () => {
     profile: { ...profile, role: 'CREATOR' },
     public_code: 'k4m5x2qa',
     bio_link: 'https://t.me/TestBot?start=c_k4m5x2qa',
+    welcome_enabled: false,
   };
 
   it('reads the settings and PATCHes the creator profile with the Bearer token', async () => {

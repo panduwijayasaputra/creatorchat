@@ -59,7 +59,16 @@ describe('upload purpose (US-036)', () => {
     expect(MediaUploadInitBodySchema.safeParse({ ...body, conversation_id: id }).success).toBe(
       false,
     );
-    expect(MediaUploadInitBodySchema.safeParse({ ...body, purpose: 'BROADCAST' }).success).toBe(
+  });
+
+  it('BROADCAST and WELCOME uploads take no conversation (US-038)', () => {
+    for (const purpose of ['BROADCAST', 'WELCOME']) {
+      expect(MediaUploadInitBodySchema.safeParse({ ...body, purpose }).success).toBe(true);
+      expect(
+        MediaUploadInitBodySchema.safeParse({ ...body, purpose, conversation_id: id }).success,
+      ).toBe(false);
+    }
+    expect(MediaUploadInitBodySchema.safeParse({ ...body, purpose: 'LIBRARY' }).success).toBe(
       false,
     );
   });

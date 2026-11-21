@@ -1,4 +1,10 @@
 import type {
+  SaveWelcomeMessageBody,
+  WelcomeMessageResponse,
+  NotificationPreferencesResponse,
+  UpdateNotificationPreferencesBody,
+  BroadcastView,
+  CreateBroadcastBody,
   ChatMediaDetail,
   CreatorGalleryItemDetail,
   CustomerGalleryItemDetail,
@@ -110,6 +116,7 @@ export const BOARD_SUBSCRIPTIONS: SubscriptionsResponse = {
       access: { state: 'ACTIVE', ends_at: '2026-11-27T16:59:59.000Z' },
       creator_available: true,
       conversation_id: '44444444-0000-4000-8000-000000000001',
+      muted: false,
     },
     {
       public_code: 'dinda234',
@@ -118,6 +125,7 @@ export const BOARD_SUBSCRIPTIONS: SubscriptionsResponse = {
       access: { state: 'PENDING', requested_at: '2026-11-13T03:42:00.000Z', request_type: 'TRIAL' },
       creator_available: true,
       conversation_id: null,
+      muted: false,
     },
     {
       public_code: 'kirana23',
@@ -126,6 +134,7 @@ export const BOARD_SUBSCRIPTIONS: SubscriptionsResponse = {
       access: { state: 'EXPIRED', ended_at: '2026-11-06T16:59:59.000Z', revoked: false },
       creator_available: true,
       conversation_id: '44444444-0000-4000-8000-000000000002',
+      muted: false,
     },
   ],
 };
@@ -161,6 +170,22 @@ export interface FakeMiniappApi extends MiniappApi {
   timezoneCalls: string[];
   /** Next outcomes for updateCreatorTimezone; default echoes the zone onto `maya`. */
   timezoneResults: (UserProfile | Error)[];
+  /** The welcome message as the server holds it; `saveWelcomeMessage` replaces it (default outcome). */
+  welcomeMessage: WelcomeMessageResponse;
+  welcomeGetCalls: number;
+  welcomeGetResults: (WelcomeMessageResponse | Error)[];
+  welcomeSaveCalls: SaveWelcomeMessageBody[];
+  welcomeSaveResults: (WelcomeMessageResponse | Error | Promise<WelcomeMessageResponse>)[];
+  /** My notification choices as the server holds them; `getNotificationPreferences` answers this. */
+  notificationPreferences: NotificationPreferencesResponse;
+  notificationPreferencesGetCalls: number;
+  /** Bodies sent to updateNotificationPreferences, and its next outcomes (default: apply the patch). */
+  notificationUpdateCalls: UpdateNotificationPreferencesBody[];
+  notificationUpdateResults: (
+    NotificationPreferencesResponse | Error | Promise<NotificationPreferencesResponse>
+  )[];
+  /** Next outcomes for getNotificationPreferences (default: the stored state). */
+  notificationGetResults: (NotificationPreferencesResponse | Error)[];
   /** Next outcomes for getCreatorRequestState; default is no request and no block. */
   creatorRequestStateResults: (CreatorRequestStateResponse | Error)[];
   creatorRequestStateCalls: number;
@@ -210,6 +235,9 @@ export interface FakeMiniappApi extends MiniappApi {
   inboxResults: (InboxResponse | Error | Promise<InboxResponse>)[];
   /** Creator media (US-032). Defaults: board limits; init makes a PENDING asset with an upload link; complete answers PROCESSING; getMedia answers READY; an empty gallery. */
   mediaLimitsResult: MediaLimits | Error;
+  /** Bodies of `createBroadcast`, and the next outcomes (default: a QUEUED broadcast). */
+  broadcastCalls: CreateBroadcastBody[];
+  broadcastResults: (BroadcastView | Error)[];
   mediaInitCalls: MediaUploadInitBody[];
   mediaInitResults: (MediaUploadInitResponse | Error)[];
   mediaCompleteCalls: string[];
@@ -466,6 +494,12 @@ export function createFakeMiniappApi(
     creatorSettings?: (CreatorSettingsResponse | Error)[];
     timezone?: (UserProfile | Error)[];
     creatorRequestState?: (CreatorRequestStateResponse | Error)[];
+    welcomeGet?: (WelcomeMessageResponse | Error)[];
+    welcomeSave?: (WelcomeMessageResponse | Error | Promise<WelcomeMessageResponse>)[];
+    notificationGet?: (NotificationPreferencesResponse | Error)[];
+    notificationUpdate?: (
+      NotificationPreferencesResponse | Error | Promise<NotificationPreferencesResponse>
+    )[];
     submitRequest?: (SubmitCreatorRequestResponse | Error)[];
     chatHistory?: (ChatHistoryResponse | Error | Promise<ChatHistoryResponse>)[];
     chatSend?: (SendMessageResponse | Error | Promise<SendMessageResponse>)[];
@@ -532,6 +566,8 @@ export function createFakeMiniappApi(
       video_max_bytes: 209_715_200,
       video_max_seconds: 300,
     },
+    broadcastCalls: [],
+    broadcastResults: [],
     mediaInitCalls: [],
     mediaInitResults: [...(options.mediaInit ?? [])],
     mediaCompleteCalls: [],
@@ -559,10 +595,70 @@ export function createFakeMiniappApi(
     updateCreatorCalls: [],
     timezoneCalls: [],
     timezoneResults: [...(options.timezone ?? [])],
+    welcomeMessage: { enabled: false, body: '', media: null },
+    welcomeGetCalls: 0,
+    welcomeGetResults: [...(options.welcomeGet ?? [])],
+    welcomeSaveCalls: [],
+    welcomeSaveResults: [...(options.welcomeSave ?? [])],
+    notificationPreferences: { messages_enabled: true, show_content: false },
+    notificationPreferencesGetCalls: 0,
+    notificationUpdateCalls: [],
+    notificationUpdateResults: [...(options.notificationUpdate ?? [])],
+    notificationGetResults: [...(options.notificationGet ?? [])],
     creatorRequestStateResults: [...(options.creatorRequestState ?? [])],
     creatorRequestStateCalls: 0,
     submitRequestCalls: [],
     submitRequestResults: [...(options.submitRequest ?? [])],
+    async getWelcomeMessage() {
+      api.welcomeGetCalls += 1;
+      const next = api.welcomeGetResults.shift() ?? { ...api.welcomeMessage };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async saveWelcomeMessage(body) {
+      api.welcomeSaveCalls.push(body);
+      const next = api.welcomeSaveResults.shift();
+      if (next !== undefined) {
+        const result = await next;
+        if (result instanceof Error) throw result;
+        api.welcomeMessage = result;
+        return result;
+      }
+      api.welcomeMessage = {
+        enabled: body.enabled,
+        body: body.body,
+        media: body.asset_id
+          ? {
+              asset_id: body.asset_id,
+              kind: 'PHOTO',
+              source: 'GALLERY',
+              duration_seconds: null,
+              thumbnail_url: 'https://cdn.example.test/welcome-thumb.webp',
+            }
+          : null,
+      };
+      return { ...api.welcomeMessage };
+    },
+    async getNotificationPreferences() {
+      api.notificationPreferencesGetCalls += 1;
+      const next = api.notificationGetResults.shift() ?? { ...api.notificationPreferences };
+      if (next instanceof Error) throw next;
+      return next;
+    },
+    async updateNotificationPreferences(body) {
+      api.notificationUpdateCalls.push(body);
+      const next = api.notificationUpdateResults.shift();
+      if (next !== undefined) {
+        const result = await next;
+        if (result instanceof Error) throw result;
+        return result;
+      }
+      api.notificationPreferences = {
+        ...api.notificationPreferences,
+        ...body,
+      } as NotificationPreferencesResponse;
+      return { ...api.notificationPreferences };
+    },
     async getCreatorRequestState() {
       api.creatorRequestStateCalls += 1;
       // Like the server: once a request was stored, it is the latest one.
@@ -604,6 +700,7 @@ export function createFakeMiniappApi(
         profile: maya,
         public_code: 'salsa234',
         bio_link: 'https://t.me/TestBot?start=c_salsa234',
+        welcome_enabled: api.welcomeMessage.enabled,
       };
       if (next instanceof Error) throw next;
       return next;
@@ -705,6 +802,18 @@ export function createFakeMiniappApi(
       const next = api.creatorCustomerResults.shift() ?? creatorCustomer();
       if (next instanceof Error) throw next;
       return next;
+    },
+    async createBroadcast(body) {
+      api.broadcastCalls.push(body);
+      const next = api.broadcastResults.shift();
+      if (next instanceof Error) throw next;
+      return (
+        next ?? {
+          id: '8d0e5f5c-1b6a-4f55-9a86-0c2a6f1d7e01',
+          status: 'QUEUED',
+          created_at: '2026-11-21T10:00:00.000Z',
+        }
+      );
     },
     async getMediaLimits() {
       if (api.mediaLimitsResult instanceof Error) throw api.mediaLimitsResult;

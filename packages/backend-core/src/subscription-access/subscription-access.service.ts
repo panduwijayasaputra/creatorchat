@@ -160,6 +160,22 @@ export class SubscriptionAccessService {
         input.accessRequestId ? 'request' : 'direct',
         context.requestId,
       );
+      // The grant that created the subscription row is the customer's first access: it asks for the
+      // welcome message (US-041). A grant after an expiry or a revoke updates the row and asks for
+      // nothing, and the unique key makes two racing first grants one request.
+      if (previous === null) {
+        await this.outbox.add(tx, {
+          type: OutboxEventType.WELCOME_REQUESTED,
+          aggregateType: 'subscription',
+          aggregateId: row.id,
+          payload: {
+            subscription_id: row.id,
+            customer_id: userId,
+            creator_id: input.creatorId,
+          },
+          dedupeKey: `welcome:${input.creatorId}:${userId}`,
+        });
+      }
       return { kind: 'ok', subscription: stateOf(row, now) } as const;
     });
   }

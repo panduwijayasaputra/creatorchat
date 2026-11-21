@@ -11,6 +11,8 @@ import { HealthStatus } from '../components/HealthStatus';
 import { GalleryPage } from '../gallery/GalleryPage';
 import { GalleryViewer } from '../gallery/GalleryViewer';
 import { NotImplemented } from '../components/NotImplemented';
+import { BroadcastPage } from '../broadcast/BroadcastPage';
+import { WelcomePage } from '../creator/welcome/WelcomePage';
 import { CreatorEditProfilePage } from '../creator/CreatorEditProfilePage';
 import { CreatorSettingsPage } from '../creator/CreatorSettingsPage';
 import { CreatorTimezonePage } from '../creator/CreatorTimezonePage';
@@ -47,7 +49,6 @@ export interface MiniappRoutesOptions {
 /** Settings rows whose screens belong to later stories. */
 const LATER_SETTINGS = [
   ['persona', 'Persona AI'],
-  ['welcome', 'Pesan selamat datang'],
   ['price', 'Harga subscription'],
 ] as const;
 
@@ -146,14 +147,16 @@ export function createMiniappRoutes({
                 {
                   element: <CreatorShell unreadCount={unreadCount} />,
                   children: [
-                    // Inbox (US-028) and Settings (US-008) are real; the other creator tabs are still placeholders.
+                    // Inbox (US-028), Gallery (US-032), Broadcast (US-038) and Settings (US-008) are real; the other creator tabs are still placeholders.
                     ...CREATOR_NAV.filter(
                       (entry) =>
                         entry.to !== '/settings' &&
                         entry.to !== '/inbox' &&
-                        entry.to !== '/gallery',
+                        entry.to !== '/gallery' &&
+                        entry.to !== '/broadcast',
                     ).map((entry) => placeholder(entry)),
                     { path: 'inbox', element: <InboxPage api={api} /> },
+                    { path: 'broadcast', element: <BroadcastPage api={api} /> },
                     {
                       path: 'gallery',
                       element: <GalleryPage api={api} />,
@@ -161,7 +164,7 @@ export function createMiniappRoutes({
                       children: [{ path: ':assetId', element: <GalleryViewer api={api} /> }],
                     },
                     { path: 'settings', element: <CreatorSettingsPage api={api} /> },
-                    // Rows owned by later stories (persona, welcome message, price).
+                    // Rows owned by later stories (persona, price).
                     ...LATER_SETTINGS.map(([path, title]) => ({
                       path: `settings/${path}`,
                       element: <NotImplemented title={title} />,
@@ -177,6 +180,7 @@ export function createMiniappRoutes({
                 // Full-screen page under Pengaturan (no bottom navigation).
                 { path: 'settings/profile', element: <CreatorEditProfilePage /> },
                 { path: 'settings/timezone', element: <CreatorTimezonePage /> },
+                { path: 'settings/welcome', element: <WelcomePage api={api} /> },
               ],
             },
             {

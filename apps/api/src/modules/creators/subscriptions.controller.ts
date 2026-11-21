@@ -40,6 +40,7 @@ export class SubscriptionsController {
                 : { state: 'EXPIRED', ended_at: a.endedAt.toISOString(), revoked: a.revoked },
           creator_available: card.creatorAvailable,
           conversation_id: card.conversationId,
+          muted: card.muted,
         };
       }),
     };

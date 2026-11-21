@@ -171,7 +171,9 @@ describe('/settings/timezone', () => {
     const api = createFakeMiniappApi({
       login: [user],
       me: [user],
-      creatorSettings: [{ profile: user, public_code: 'salsa234', bio_link: null }],
+      creatorSettings: [
+        { profile: user, public_code: 'salsa234', bio_link: null, welcome_enabled: false },
+      ],
     });
     mount({ api, path: '/settings' });
     expect(await screen.findByText('WITA · Asia/Makassar (UTC+8)')).toBeInTheDocument();

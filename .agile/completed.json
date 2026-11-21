@@ -512,6 +512,100 @@
         "TASK-216",
         "TASK-217"
       ]
+    },
+    {
+      "id": "US-044",
+      "title": "Access activated notification",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-218",
+        "TASK-219",
+        "TASK-220"
+      ]
+    },
+    {
+      "id": "US-038",
+      "title": "Creator composes and sends a broadcast",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-221",
+        "TASK-222",
+        "TASK-223",
+        "TASK-224",
+        "TASK-225",
+        "TASK-226",
+        "TASK-227"
+      ]
+    },
+    {
+      "id": "US-039",
+      "title": "Broadcast delivery to every active subscriber",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-228",
+        "TASK-229",
+        "TASK-230"
+      ]
+    },
+    {
+      "id": "US-042",
+      "title": "New message and broadcast notifications",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-231",
+        "TASK-232",
+        "TASK-233"
+      ]
+    },
+    {
+      "id": "US-043",
+      "title": "Customer notification settings and per-creator mute",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-234",
+        "TASK-235",
+        "TASK-236"
+      ]
+    },
+    {
+      "id": "US-045",
+      "title": "Access reminder and access ended notifications",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-237",
+        "TASK-238",
+        "TASK-239"
+      ]
+    },
+    {
+      "id": "US-040",
+      "title": "Creator sets the welcome message",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-240",
+        "TASK-241",
+        "TASK-242",
+        "TASK-243",
+        "TASK-244"
+      ]
+    },
+    {
+      "id": "US-041",
+      "title": "Welcome message delivered once to each new subscriber",
+      "completed": "2026-11-21",
+      "status": "ready_for_uat",
+      "tasks": [
+        "TASK-245",
+        "TASK-246",
+        "TASK-247"
+      ]
     }
   ]
 }

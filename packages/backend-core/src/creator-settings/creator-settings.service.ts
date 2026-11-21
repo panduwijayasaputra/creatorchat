@@ -5,6 +5,8 @@ import { toUserProfile } from '../user-auth/user-auth.service.js';
 export interface CreatorSettings {
   profile: UserProfile;
   publicCode: string;
+  /** The welcome message is switched on (US-040). */
+  welcomeEnabled: boolean;
 }
 
 /** Reads the caller's own creator settings; the user id comes from the session, never the client. */
@@ -15,9 +17,13 @@ export class CreatorSettingsService {
   async get(userId: string): Promise<CreatorSettings | null> {
     const creator = await this.prisma.creator.findFirst({
       where: { userId, status: 'ACTIVE', user: { status: 'ACTIVE', role: 'CREATOR' } },
-      select: { publicCode: true, user: true },
+      select: { publicCode: true, user: true, welcomeMessage: { select: { enabled: true } } },
     });
     if (!creator) return null;
-    return { profile: toUserProfile(creator.user), publicCode: creator.publicCode };
+    return {
+      profile: toUserProfile(creator.user),
+      publicCode: creator.publicCode,
+      welcomeEnabled: creator.welcomeMessage?.enabled ?? false,
+    };
   }
 }

@@ -36,6 +36,8 @@ export const ErrorCode = {
   MEDIA_RATE_LIMITED: 'MEDIA_RATE_LIMITED',
   /** The attached file is still being processed. */
   MEDIA_NOT_READY: 'MEDIA_NOT_READY',
+  /** A broadcast needs at least one active subscriber when it is sent (US-038). */
+  NO_ACTIVE_SUBSCRIBERS: 'NO_ACTIVE_SUBSCRIBERS',
   /** A customer asked for a creator's gallery without active access. */
   GALLERY_ACCESS_REQUIRED: 'GALLERY_ACCESS_REQUIRED',
   FORBIDDEN_ROLE: 'FORBIDDEN_ROLE',

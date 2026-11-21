@@ -99,6 +99,7 @@ export class ChatService {
       this.media,
       customerId,
       page.filter((m) => m.type === 'MEDIA').map((m) => m.id),
+      'attachment',
     );
     return {
       kind: 'ok',

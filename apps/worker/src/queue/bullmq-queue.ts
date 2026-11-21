@@ -5,6 +5,8 @@ import type { Logger } from 'pino';
 
 export const NOTIFICATIONS_QUEUE = 'notifications';
 export const MEDIA_QUEUE = 'media';
+export const BROADCAST_QUEUE = 'broadcast';
+export const WELCOME_QUEUE = 'welcome';
 
 /** BullMQ's blocking commands need `maxRetriesPerRequest: null` (the health probe keeps its own). */
 function connect(redisUrl: string): Redis {

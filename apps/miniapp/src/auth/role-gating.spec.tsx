@@ -40,7 +40,7 @@ function mount(api: FakeMiniappApi, path: string) {
   return router;
 }
 
-const CREATOR_ROUTES = ['/inbox', '/gallery', '/broadcast', '/settings'];
+const CREATOR_ROUTES = ['/inbox', '/gallery', '/broadcast', '/settings', '/settings/welcome'];
 const CUSTOMER_ROUTES = ['/chats', '/explore', '/subscriptions', '/profile'];
 
 describe('role-gated shells', () => {

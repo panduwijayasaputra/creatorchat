@@ -6,6 +6,7 @@ import type { FixedWindowLimiter } from '../user-auth/rate-limiter.js';
 import type { MediaAccessService } from './media-access.service.js';
 import { ENTITLED_FROM, entitledSubscriptionSql } from '../subscription-access/entitlement-sql.js';
 import { locateGalleryItem, pageGallery } from './gallery-queries.js';
+import { addToGallery } from './gallery-membership.js';
 import { sniffMediaType } from './sniff.js';
 import type { ObjectStorage, PresignedPut } from './storage/object-storage.js';
 
@@ -101,6 +102,13 @@ const VIDEO_TYPES = new Set(['video/mp4', 'video/quicktime']);
 
 const thumbKeyOf = (objectKey: string) => `${objectKey}/thumb.webp`;
 
+/** True when no message, broadcast, welcome message or gallery item uses the asset. */
+const unreferenced = (assetId: Prisma.Sql) => Prisma.sql`
+  (NOT EXISTS (SELECT 1 FROM message_attachments x WHERE x.asset_id = ${assetId})
+   AND NOT EXISTS (SELECT 1 FROM broadcasts b WHERE b.asset_id = ${assetId})
+   AND NOT EXISTS (SELECT 1 FROM creator_welcome_messages w WHERE w.asset_id = ${assetId})
+   AND NOT EXISTS (SELECT 1 FROM gallery_items g WHERE g.asset_id = ${assetId}))`;
+
 /**
  * Creator uploads and the gallery listing (US-032), plus the worker's commit and cleanup steps.
  * Every query that takes a caller-supplied id is scoped to the creator behind the session, so another
@@ -124,8 +132,11 @@ export class MediaUploadService {
       kind: 'PHOTO' | 'VIDEO';
       contentType: string;
       sizeBytes: number;
-      /** `CHAT` = "Upload Baru" in a conversation (US-036): never in the gallery. */
-      purpose?: 'GALLERY' | 'CHAT';
+      /**
+       * `CHAT` = "Upload Baru" in a conversation (US-036); `BROADCAST` / `WELCOME` = "Upload Baru" in a
+       * broadcast or the welcome message (US-038 / US-040): none of them is in the gallery by itself.
+       */
+      purpose?: 'GALLERY' | 'CHAT' | 'BROADCAST' | 'WELCOME';
       conversationId?: string | undefined;
     },
   ): Promise<InitOutcome> {
@@ -334,16 +345,9 @@ export class MediaUploadService {
         SELECT creator_id::text AS creator_id, state::text AS state, purpose::text AS purpose
         FROM media_assets WHERE id = ${assetId}::uuid FOR UPDATE`;
       if (!locked || locked.state !== 'PROCESSING') return 'SKIPPED';
-      // A chat-only upload becomes READY without a gallery item or a media number.
-      if (locked.purpose === 'GALLERY') {
-        const [counter] = await tx.$queryRaw<{ seq: number }[]>`
-          UPDATE creators SET last_gallery_seq = last_gallery_seq + 1
-          WHERE id = ${locked.creator_id}::uuid RETURNING last_gallery_seq AS seq`;
-        await tx.$executeRaw`
-          INSERT INTO gallery_items (creator_id, asset_id, seq)
-          VALUES (${locked.creator_id}::uuid, ${assetId}::uuid, ${counter?.seq ?? 1})
-          ON CONFLICT (creator_id, asset_id) DO NOTHING`;
-      }
+      // Only a gallery upload gets a gallery item and a media number; chat, broadcast and welcome
+      // uploads become READY without either.
+      if (locked.purpose === 'GALLERY') await addToGallery(tx, locked.creator_id, assetId);
       await tx.mediaAsset.update({
         where: { id: assetId },
         data: {
@@ -379,32 +383,36 @@ export class MediaUploadService {
   }
 
   /**
-   * Removes abandoned (PENDING) and FAILED uploads older than a day, and chat uploads that were never
-   * sent (READY for a day, no attachment), objects first and then the row, each under the row lock.
-   * A send locks the same row and re-checks, so an attached file can never be removed; gallery assets
-   * are never touched.
+   * Removes abandoned (PENDING) and FAILED uploads older than a day, and chat / broadcast / welcome
+   * uploads that were never used (READY for a day, no attachment, no broadcast, no gallery item),
+   * objects first and then the row, each under the row lock. A send locks the same row and
+   * re-checks, and the references are checked once more after the lock in a fresh statement, so a
+   * file that a message, a broadcast or the gallery uses can never be removed.
    */
   async cleanup(now: Date = this.clock(), batch = 100): Promise<number> {
     const cutoff = new Date(now.getTime() - CLEANUP_AFTER_MS);
+    const removable = Prisma.sql`
+      ((state = 'PENDING' AND created_at < ${cutoff}::timestamptz)
+        OR (state = 'FAILED' AND updated_at < ${cutoff}::timestamptz)
+        OR (purpose IN ('CHAT', 'BROADCAST', 'WELCOME') AND state = 'READY'
+            AND ready_at < ${cutoff}::timestamptz
+            AND ${unreferenced(Prisma.sql`media_assets.id`)}))`;
     const candidates = await this.deps.prisma.$queryRaw<{ id: string }[]>`
       SELECT id::text AS id FROM media_assets
-      WHERE (state = 'PENDING' AND created_at < ${cutoff}::timestamptz)
-         OR (state = 'FAILED' AND updated_at < ${cutoff}::timestamptz)
-         OR (purpose = 'CHAT' AND state = 'READY' AND ready_at < ${cutoff}::timestamptz
-             AND NOT EXISTS (SELECT 1 FROM message_attachments x WHERE x.asset_id = media_assets.id))
+      WHERE ${removable}
       ORDER BY created_at LIMIT ${batch}`;
     let removed = 0;
     for (const { id } of candidates) {
       const done = await this.deps.prisma.$transaction(async (tx) => {
         const [row] = await tx.$queryRaw<{ object_key: string }[]>`
           SELECT object_key FROM media_assets
-          WHERE id = ${id}::uuid
-            AND ((state = 'PENDING' AND created_at < ${cutoff}::timestamptz)
-              OR (state = 'FAILED' AND updated_at < ${cutoff}::timestamptz)
-              OR (purpose = 'CHAT' AND state = 'READY' AND ready_at < ${cutoff}::timestamptz
-                  AND NOT EXISTS (SELECT 1 FROM message_attachments x WHERE x.asset_id = media_assets.id)))
+          WHERE id = ${id}::uuid AND ${removable}
           FOR UPDATE SKIP LOCKED`;
         if (!row) return false;
+        // A new statement sees what committed while the first one ran.
+        const [still] = await tx.$queryRaw<{ unused: boolean }[]>`
+          SELECT ${unreferenced(Prisma.sql`${id}::uuid`)} AS unused`;
+        if (!still?.unused) return false;
         await this.deps.storage.delete(row.object_key);
         await this.deps.storage.delete(thumbKeyOf(row.object_key));
         await tx.$executeRaw`DELETE FROM media_assets WHERE id = ${id}::uuid`;

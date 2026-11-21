@@ -123,6 +123,39 @@ describe('OutboxDispatcher.dispatch', () => {
   });
 });
 
+describe('OutboxDispatcher.dispatch with a minimum age', () => {
+  const make2 = (queue: JobQueue, now: Date, minAgeMs: Record<string, number>) =>
+    new OutboxDispatcher(prisma, queue, {
+      handledTypes: [TYPE, 'message.created'],
+      minAgeMs,
+      clock: () => now,
+    });
+
+  it('claims a delayed type only once it is old enough, and never delays the other types', async () => {
+    const young = await event({ type: 'message.created', createdAt: at(-10_000) });
+    const old = await event({ type: 'message.created', createdAt: at(-40_000) });
+    const other = await event({ createdAt: at(-1000) });
+    const queue = new MemoryQueue();
+    const result = await make2(queue, T0, { 'message.created': 30_000 }).dispatch();
+    expect(result.enqueued).toBe(2);
+    expect(queue.jobs.map((j) => j.jobId).sort()).toEqual([old.id, other.id].sort());
+    expect((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: young.id } })).status).toBe(
+      'PENDING',
+    );
+    // later the young one is old enough
+    const later = new MemoryQueue();
+    await make2(later, at(25_000), { 'message.created': 30_000 }).dispatch();
+    expect(later.jobs.map((j) => j.jobId)).toEqual([young.id]);
+  });
+
+  it('an age for a type that is not handled is ignored, and no age means no delay', async () => {
+    const fresh = await event({ type: 'message.created', createdAt: at(-1) });
+    const queue = new MemoryQueue();
+    await make2(queue, T0, { 'something.else': 60_000 }).dispatch();
+    expect(queue.jobs.map((j) => j.jobId)).toEqual([fresh.id]);
+  });
+});
+
 describe('OutboxDispatcher.reconcile', () => {
   it('puts a stale ENQUEUED event back, and enqueues it again (crash with no job)', async () => {
     const e = await event({ status: 'ENQUEUED', enqueuedAt: at(-5 * 60_000) });

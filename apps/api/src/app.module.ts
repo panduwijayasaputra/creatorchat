@@ -10,6 +10,7 @@ import { CreatorModule } from './modules/creator/creator.module.js';
 import { RealtimeModule } from './modules/realtime/realtime.module.js';
 import { MediaModule } from './modules/media/media.module.js';
 import { MeModule } from './modules/me/me.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { TelegramWebhookModule } from './modules/telegram-webhook/telegram-webhook.module.js';
 
 @Module({})
@@ -23,6 +24,7 @@ export class AppModule {
         AdminModule,
         AuthModule,
         MeModule,
+        NotificationsModule,
         CreatorsModule,
         ChatModule,
         CreatorModule,

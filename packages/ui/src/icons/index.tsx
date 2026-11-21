@@ -196,3 +196,4 @@ export const GlobeIcon = createIcon(
     <path d="M3 12h18M12 3c2.8 2.6 4 5.6 4 9s-1.2 6.4-4 9c-2.8-2.6-4-5.6-4-9s1.2-6.4 4-9z" />
   </>,
 );
+export const TrashIcon = createIcon('Trash', <path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13" />);

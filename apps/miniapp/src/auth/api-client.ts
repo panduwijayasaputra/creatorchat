@@ -1,5 +1,17 @@
 import {
+  WELCOME_MESSAGE_PATH,
+  WelcomeMessageResponseSchema,
+  type SaveWelcomeMessageBody,
+  type WelcomeMessageResponse,
+  NOTIFICATION_PREFERENCES_PATH,
+  NotificationPreferencesResponseSchema,
+  type NotificationPreferencesResponse,
+  type UpdateNotificationPreferencesBody,
+  BroadcastSchema,
   CREATOR_GALLERY_PATH,
+  creatorBroadcastsPath,
+  type BroadcastView,
+  type CreateBroadcastBody,
   CREATOR_MEDIA_LIMITS_PATH,
   CREATOR_MEDIA_UPLOADS_PATH,
   CreatorGalleryResponseSchema,
@@ -146,6 +158,16 @@ export interface MiniappApi {
   updateCreatorProfile(input: UpdateProfileRequest): Promise<UserProfile>;
   /** Creator only: sets the display timezone (display only); returns the account as saved. */
   updateCreatorTimezone(timezone: TimezoneId): Promise<UserProfile>;
+  /** CREATOR only: my welcome message (off and empty before it was ever saved). */
+  getWelcomeMessage(): Promise<WelcomeMessageResponse>;
+  /** CREATOR only: replaces the whole welcome message; the same body twice changes nothing. 404 MEDIA_NOT_FOUND, 409 MEDIA_NOT_READY arrive as ApiError. */
+  saveWelcomeMessage(body: SaveWelcomeMessageBody): Promise<WelcomeMessageResponse>;
+  /** USER only: my Telegram notification choices (the defaults when I never changed them). */
+  getNotificationPreferences(): Promise<NotificationPreferencesResponse>;
+  /** USER only: changes only the named switches; answers the whole new state. */
+  updateNotificationPreferences(
+    body: UpdateNotificationPreferencesBody,
+  ): Promise<NotificationPreferencesResponse>;
   /** USER only: the latest creator request and, if any, the subscription that blocks a new one. */
   getCreatorRequestState(): Promise<CreatorRequestStateResponse>;
   /** USER only: submits the request (idempotent while one is pending). 409 CREATOR_REQUEST_BLOCKED arrives as ApiError. */
@@ -175,6 +197,8 @@ export interface MiniappApi {
     cursor?: string | null;
     limit?: number;
   }): Promise<InboxResponse>;
+  /** CREATOR only: sends a photo or video (+ optional text) to every active subscriber; the same `client_broadcast_id` returns the same broadcast. 409 NO_ACTIVE_SUBSCRIBERS / MEDIA_NOT_READY / IDEMPOTENCY_CONFLICT, 404 MEDIA_NOT_FOUND, 429 RATE_LIMITED arrive as ApiError. */
+  createBroadcast(body: CreateBroadcastBody): Promise<BroadcastView>;
   /** CREATOR only: upload limits (bytes, seconds). */
   getMediaLimits(): Promise<MediaLimits>;
   /** CREATOR only: starts an upload; the same `client_upload_id` returns the same asset with a fresh link. 400 MEDIA_TYPE_NOT_ALLOWED / MEDIA_TOO_LARGE, 429 MEDIA_RATE_LIMITED arrive as ApiError. */
@@ -383,6 +407,22 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
       const response = await authorized('PATCH', PROFILE_PATH, input);
       return UpdateProfileResponseSchema.parse(await response.json());
     },
+    async getWelcomeMessage() {
+      const response = await authorized('GET', WELCOME_MESSAGE_PATH);
+      return WelcomeMessageResponseSchema.parse(await response.json());
+    },
+    async saveWelcomeMessage(body) {
+      const response = await authorized('PUT', WELCOME_MESSAGE_PATH, body);
+      return WelcomeMessageResponseSchema.parse(await response.json());
+    },
+    async getNotificationPreferences() {
+      const response = await authorized('GET', NOTIFICATION_PREFERENCES_PATH);
+      return NotificationPreferencesResponseSchema.parse(await response.json());
+    },
+    async updateNotificationPreferences(body) {
+      const response = await authorized('PATCH', NOTIFICATION_PREFERENCES_PATH, body);
+      return NotificationPreferencesResponseSchema.parse(await response.json());
+    },
     async getCreatorSettings() {
       const response = await authorized('GET', CREATOR_SETTINGS_PATH);
       return CreatorSettingsResponseSchema.parse(await response.json());
@@ -430,6 +470,10 @@ export function createMiniappApi(options: MiniappApiOptions): MiniappApi {
     async getCreatorCustomer(conversationId) {
       const response = await authorized('GET', creatorCustomerPath(conversationId));
       return CreatorCustomerDetailResponseSchema.parse(await response.json());
+    },
+    async createBroadcast(body) {
+      const response = await authorized('POST', creatorBroadcastsPath, body);
+      return BroadcastSchema.parse(await response.json());
     },
     async getMediaLimits() {
       const response = await authorized('GET', CREATOR_MEDIA_LIMITS_PATH);
